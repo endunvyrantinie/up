@@ -38,7 +38,9 @@ export default function AdminPage() {
       totalCommissions?: number;
       totalTransactions?: number;
       activeVIP?: number;
+      recentUsers?: number;
       pendingWithdrawals?: number;
+      pendingAmount?: number;
     };
     vipDistribution?: Record<string, number>;
     topReferrers?: Array<{ username: string; referralCount: number; commissions: number }>;

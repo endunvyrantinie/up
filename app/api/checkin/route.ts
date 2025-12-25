@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
 
     user.balance += reward;
     user.totalEarned += reward;
-    (user as any).dailyRewardsBalance = ((user as any).dailyRewardsBalance || 0) + reward;
-    (user as any).dailyRewardsTotal = ((user as any).dailyRewardsTotal || 0) + reward;
+    user.dailyRewardsBalance = (user.dailyRewardsBalance || 0) + reward;
+    user.dailyRewardsTotal = (user.dailyRewardsTotal || 0) + reward;
     user.lastCheckIn = new Date().toISOString();
     const streak = user.checkInStreak || 0;
     user.checkInStreak = lastCheckIn && new Date(today) > new Date(lastCheckIn + 'T00:00:00') && 

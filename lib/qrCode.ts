@@ -4,11 +4,10 @@ export async function generateQRCode(amount: number): Promise<string> {
   
   try {
     // Try to use qrcode library if available
-    // @ts-ignore - Dynamic import may not have types
     const QRCodeModule = await import('qrcode');
     const QRCode = QRCodeModule.default || QRCodeModule;
     
-    const qrCodeDataURL = await QRCode.toDataURL(qrData, {
+    const qrCodeDataURL = await (QRCode as any).toDataURL(qrData, {
       width: 300,
       margin: 2,
       color: {
@@ -37,7 +36,12 @@ export async function generateQRCode(amount: number): Promise<string> {
         <text x="150" y="185" text-anchor="middle" font-size="16" font-weight="bold" fill="#8B4513">$${amount.toFixed(2)}</text>
       </svg>
     `;
-    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+    // Encode SVG to base64 (server-side only)
+    if (typeof Buffer !== 'undefined') {
+      return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+    }
+    // Fallback for client-side: URL encode
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 }
 

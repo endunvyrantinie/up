@@ -153,7 +153,7 @@ export default function DashboardPage() {
             {(['referrals', 'withdraw', 'transactions'] as const).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-3 text-sm font-semibold capitalize whitespace-nowrap ${
                   activeTab === tab
                     ? 'text-coffee-600 border-b-2 border-coffee-600'

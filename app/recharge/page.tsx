@@ -42,9 +42,9 @@ export default function RechargePage() {
   };
 
   const handleRecharge = async () => {
-    const rechargeAmount = selectedAmount || parseFloat(amount);
+    const rechargeAmount = selectedAmount || (amount ? parseFloat(amount) : 0);
     
-    if (!rechargeAmount || rechargeAmount < 50) {
+    if (!rechargeAmount || rechargeAmount < 50 || isNaN(rechargeAmount)) {
       alert('Minimum deposit is RM 50');
       return;
     }
@@ -154,7 +154,7 @@ export default function RechargePage() {
                 className="w-full pl-12 pr-4 py-4 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 bg-white text-coffee-900 text-lg font-semibold"
               />
             </div>
-            {amount && parseFloat(amount) < 50 && (
+            {amount && parseFloat(amount) > 0 && parseFloat(amount) < 50 && (
               <p className="mt-2 text-sm text-red-600">⚠️ Minimum deposit is RM 50</p>
             )}
           </div>
@@ -177,7 +177,7 @@ export default function RechargePage() {
 
           <button
             onClick={handleRecharge}
-            disabled={loading || (!amount && !selectedAmount) || (amount && parseFloat(amount) < 50)}
+            disabled={loading || (!amount && !selectedAmount) || (amount ? parseFloat(amount) < 50 : false)}
             className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-5 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
           >
             {loading ? (

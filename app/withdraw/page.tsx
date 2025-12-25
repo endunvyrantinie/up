@@ -83,11 +83,12 @@ export default function WithdrawPage() {
   };
 
   const handleGenerateQR = async () => {
-    if (!amount || parseFloat(amount) < 12) {
+    const withdrawalAmount = amount ? parseFloat(amount) : 0;
+    if (!amount || isNaN(withdrawalAmount) || withdrawalAmount < 12) {
       alert('Minimum withdrawal is RM 12');
       return;
     }
-    if (user && parseFloat(amount) > user.balance) {
+    if (user && withdrawalAmount > user.balance) {
       alert('Insufficient balance');
       return;
     }
@@ -101,7 +102,7 @@ export default function WithdrawPage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ amount: parseFloat(amount) }),
+        body: JSON.stringify({ amount: withdrawalAmount }),
       });
       const data = await res.json();
       if (data.success) {
@@ -189,7 +190,7 @@ export default function WithdrawPage() {
               )}
             </div>
             
-            {amount && parseFloat(amount) >= 12 && !error && (
+            {amount && parseFloat(amount) > 0 && parseFloat(amount) >= 12 && !error && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-coffee-600">Amount received:</span>
@@ -226,7 +227,7 @@ export default function WithdrawPage() {
           {/* Withdrawal Button */}
           <button
             onClick={handleGenerateQR}
-            disabled={loading || !amount || parseFloat(amount) < 12 || !!error || !selectedAccount}
+            disabled={loading || !amount || (amount ? parseFloat(amount) < 12 : true) || !!error || !selectedAccount}
             className="w-full mt-6 bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-4 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
           >
             {loading ? (

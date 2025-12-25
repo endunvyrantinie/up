@@ -72,14 +72,19 @@ function RegisterContent() {
 
           const loginData = await loginRes.json();
 
-          if (loginData.success) {
-            // Clear any existing tokens first
-            localStorage.removeItem('token');
-            localStorage.removeItem('adminToken');
+          if (loginData.success && loginData.token) {
+            // Clear ALL existing tokens and data first
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Small delay to ensure storage is cleared
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             // Set new token
             localStorage.setItem('token', loginData.token);
             // Use window.location for clean redirect
             window.location.href = '/home?showInfo=true';
+            return;
           } else {
             setError('Registration successful, but auto-login failed. Please login manually.');
             setTimeout(() => {

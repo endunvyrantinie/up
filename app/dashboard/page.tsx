@@ -71,8 +71,13 @@ export default function DashboardPage() {
 
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/');
+    if (confirm('Are you sure you want to logout?')) {
+      // Clear ALL tokens and user data completely
+      localStorage.clear();
+      sessionStorage.clear();
+      // Force redirect to login with cache busting
+      window.location.href = '/login?t=' + Date.now();
+    }
   };
 
   if (loading) {

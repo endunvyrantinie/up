@@ -20,6 +20,10 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
+      // Clear any existing tokens before login attempt
+      localStorage.removeItem('token');
+      localStorage.removeItem('adminToken');
+      
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,10 +39,13 @@ export default function LoginPage() {
       
       const data = await res.json();
       
-      if (data.success) {
-        // Clear any existing tokens first
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminToken');
+      if (data.success && data.token) {
+        // Clear ALL existing data first
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Small delay to ensure storage is cleared
+        await new Promise(resolve => setTimeout(resolve, 50));
         
         // Set new token
         localStorage.setItem('token', data.token);
@@ -47,9 +54,11 @@ export default function LoginPage() {
           // Use window.location for admin to ensure clean redirect
           window.location.href = '/admin';
         } else {
-          // Use window.location for user to ensure clean redirect
-          window.location.href = '/home?showInfo=true';
+          // Use window.location for user to ensure clean redirect with cache busting
+          window.location.href = '/home?showInfo=true&t=' + Date.now();
         }
+        // Don't set loading to false here as we're redirecting
+        return;
       } else {
         setError(data.error || 'Login failed');
         setLoading(false);
@@ -57,7 +66,6 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error);
       setError('Connection error. Please check your internet and try again.');
-    } finally {
       setLoading(false);
     }
   };

@@ -41,11 +41,11 @@ export default function MinePage() {
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
-      // Clear all tokens and user data
-      localStorage.removeItem('token');
-      localStorage.removeItem('adminToken');
-      // Force redirect to login
-      window.location.href = '/login';
+      // Clear ALL tokens and user data completely
+      localStorage.clear();
+      sessionStorage.clear();
+      // Force redirect to login with cache busting
+      window.location.href = '/login?t=' + Date.now();
     }
   };
 

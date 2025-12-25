@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
       }
 
+      // Generate fresh token
       const token = generateToken(user.id, false);
+      
+      if (!token) {
+        return NextResponse.json({ error: 'Failed to generate token' }, { status: 500 });
+      }
       
       return NextResponse.json({ 
         success: true, 

@@ -34,15 +34,15 @@ function HomeContent() {
       const data = await res.json();
       
       if (data.success) {
-        setSuccess('Бақайдгирӣ муваффақ шуд! Лутфан ворид шавед.');
+        setSuccess('Registration successful! Please login.');
         setTimeout(() => {
           router.push('/login');
         }, 2000);
       } else {
-        setError(data.error || 'Бақайдгирӣ номуваффақ шуд');
+        setError(data.error || 'Registration failed');
       }
     } catch (error) {
-      setError('Хато дар пайванд. Лутфан боз кӯшиш кунед.');
+      setError('Connection error. Please try again.');
       console.error('Registration error:', error);
     } finally {
       setLoading(false);
@@ -151,7 +151,7 @@ function HomeContent() {
                   {loading ? (
                     <>
                       <span className="animate-spin">⏳</span>
-                      Дар ҳоли кор...
+                      Processing...
                     </>
                   ) : (
                     'Register'

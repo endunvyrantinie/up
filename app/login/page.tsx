@@ -22,12 +22,17 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('token', data.token);
-        router.push('/dashboard');
+        if (data.user?.isAdmin) {
+          localStorage.setItem('adminToken', data.token);
+          router.push('/admin');
+        } else {
+          router.push('/home?showInfo=true');
+        }
       } else {
         alert(data.error || 'Login failed');
       }
     } catch (error) {
-      alert('Login failed');
+      alert('Login failed. Please try again.');
     }
   };
 

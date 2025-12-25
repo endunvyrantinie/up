@@ -86,22 +86,37 @@ export default function RechargePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20">
-      <div className="bg-coffee-800 text-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-xl">
         <div className="container mx-auto flex justify-between items-center">
-          <Link href="/home" className="text-sm hover:underline">
-            ← Back
+          <Link href="/home" className="text-sm hover:text-coffee-200 transition flex items-center gap-2">
+            <span>←</span>
+            <span>Back</span>
           </Link>
-          <h1 className="text-xl font-bold">Recharge</h1>
-          <div></div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <span>💰</span>
+            <span>Recharge</span>
+          </h1>
+          <div className="w-16"></div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-coffee-800 mb-4">Recharge amount (Minimum RM 50)</h2>
+      <div className="container mx-auto px-4 py-6 -mt-4">
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-2xl p-6 mb-6 text-white">
+          <p className="text-white/90 text-sm mb-2">Current Balance</p>
+          <p className="text-4xl font-bold">RM {user.balance.toFixed(2)}</p>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6 border-2 border-coffee-100">
+          <h2 className="text-2xl font-bold text-coffee-800 mb-2 flex items-center gap-2">
+            <span>💳</span>
+            <span>Recharge Amount</span>
+          </h2>
+          <p className="text-sm text-coffee-600 mb-6">Minimum deposit: RM 50</p>
           
-          {/* Amount Chips */}
+          {/* Amount Chips - Enhanced */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             {amountChips.map((chip) => (
               <button
@@ -110,65 +125,94 @@ export default function RechargePage() {
                   setSelectedAmount(chip);
                   setAmount(chip.toString());
                 }}
-                className={`py-3 px-4 rounded-lg font-semibold transition ${
+                className={`py-4 px-4 rounded-xl font-bold transition-all duration-300 transform ${
                   selectedAmount === chip
-                    ? 'bg-coffee-brown text-white'
-                    : 'bg-coffee-50 text-coffee-800 hover:bg-coffee-100'
+                    ? 'bg-gradient-to-r from-coffee-brown to-coffee-600 text-white shadow-lg scale-105'
+                    : 'bg-coffee-50 text-coffee-800 hover:bg-coffee-100 hover:scale-105 border-2 border-coffee-200'
                 }`}
               >
-                RM {chip}
+                RM {chip.toLocaleString()}
               </button>
             ))}
           </div>
 
-          {/* Amount Input */}
+          {/* Amount Input - Enhanced */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-coffee-800 mb-2">
-              RM Please enter recharge amount
+            <label className="block text-sm font-bold text-coffee-800 mb-3">
+              💵 Enter Custom Amount
             </label>
-            <input
-              type="number"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-                setSelectedAmount(null);
-              }}
-              className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
-            />
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-coffee-600 font-bold">RM</span>
+              <input
+                type="number"
+                placeholder="Enter amount (min RM 50)"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setSelectedAmount(null);
+                }}
+                className="w-full pl-12 pr-4 py-4 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 bg-white text-coffee-900 text-lg font-semibold"
+              />
+            </div>
+            {amount && parseFloat(amount) < 50 && (
+              <p className="mt-2 text-sm text-red-600">⚠️ Minimum deposit is RM 50</p>
+            )}
           </div>
 
-          {/* Recharge Channel */}
+          {/* Recharge Channel - Enhanced */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-coffee-800 mb-2">
-              Recharge channel
+            <label className="block text-sm font-bold text-coffee-800 mb-3">
+              🔄 Payment Channel
             </label>
-            <div className="bg-coffee-50 border border-coffee-300 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 hover:shadow-lg transition">
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-coffee-800">Payment Channel 1</span>
-                <span className="text-coffee-600">✓</span>
+                <div>
+                  <span className="font-bold text-coffee-800 block">Payment Channel 1</span>
+                  <span className="text-xs text-coffee-600">Secure & Fast</span>
+                </div>
+                <span className="text-2xl text-green-600">✓</span>
               </div>
             </div>
           </div>
 
           <button
             onClick={handleRecharge}
-            disabled={loading || (!amount && !selectedAmount)}
-            className="w-full bg-coffee-brown text-white py-4 rounded-lg font-bold text-lg hover:bg-coffee-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || (!amount && !selectedAmount) || (amount && parseFloat(amount) < 50)}
+            className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-5 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : 'Recharge now'}
+            {loading ? (
+              <>
+                <span className="animate-spin text-2xl">⏳</span>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <span>💳</span>
+                <span>Recharge Now</span>
+              </>
+            )}
           </button>
         </div>
 
-        {/* Recharge Rules */}
-        <div className="bg-white rounded-2xl shadow-xl p-6">
-          <h3 className="text-lg font-bold text-coffee-800 mb-4">Recharge rules</h3>
-          <ul className="space-y-2 text-sm text-coffee-700">
-            <li>1. Minimum deposit is 50.</li>
-            <li>2. Verify account information before transferring.</li>
-            <li>3. If funds are delayed, contact online service.</li>
-            <li>4. Never transfer to strangers.</li>
-            <li>5. Officials never ask for password.</li>
+        {/* Recharge Rules - Enhanced */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-coffee-100">
+          <h3 className="text-xl font-bold text-coffee-800 mb-4 flex items-center gap-2">
+            <span>📋</span>
+            <span>Recharge Rules</span>
+          </h3>
+          <ul className="space-y-3">
+            {[
+              'Minimum deposit is RM 50',
+              'Verify account information before transferring',
+              'If funds are delayed, contact online service',
+              'Never transfer to strangers',
+              'Officials never ask for password'
+            ].map((rule, index) => (
+              <li key={index} className="flex items-start gap-3 p-3 bg-coffee-50 rounded-xl hover:bg-coffee-100 transition">
+                <span className="text-coffee-brown font-bold text-lg">{index + 1}.</span>
+                <span className="text-sm text-coffee-700 flex-1 pt-0.5">{rule}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

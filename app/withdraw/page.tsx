@@ -22,6 +22,12 @@ export default function WithdrawPage() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [qrCode, setQrCode] = useState('');
   const [selectedAccount, setSelectedAccount] = useState('Bank Account 1');
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [error, setError] = useState('');
+  const [accounts] = useState([
+    { id: '1', name: 'Bank Account 1', bank: 'Maybank', account: '1234567890' },
+    { id: '2', name: 'Bank Account 2', bank: 'CIMB', account: '0987654321' },
+  ]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -161,12 +167,29 @@ export default function WithdrawPage() {
                 type="number"
                 placeholder="Enter amount"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setAmount(value);
+                  setError('');
+                  
+                  if (value && parseFloat(value) < 12) {
+                    setError('Minimum withdrawal is RM 12');
+                  } else if (value && user && parseFloat(value) > user.balance) {
+                    setError(`Insufficient balance. Available: RM ${user.balance.toFixed(2)}`);
+                  } else {
+                    setError('');
+                  }
+                }}
                 className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
               />
+              {error && (
+                <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+                  ⚠️ {error}
+                </div>
+              )}
             </div>
             
-            {amount && parseFloat(amount) >= 12 && (
+            {amount && parseFloat(amount) >= 12 && !error && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-coffee-600">Amount received:</span>
@@ -184,11 +207,66 @@ export default function WithdrawPage() {
               <label className="block text-sm font-semibold text-coffee-800 mb-2">
                 Please select your withdrawal account
               </label>
-              <div className="bg-coffee-50 border border-coffee-300 rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-coffee-100 transition">
-                <span className="font-semibold text-coffee-800">{selectedAccount}</span>
-                <span className="text-coffee-600">→</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowAccountModal(true)}
+                className="w-full bg-coffee-50 border border-coffee-300 rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-coffee-100 transition text-left"
+              >
+                <div>
+                  <span className="font-semibold text-coffee-800 block">{selectedAccount}</span>
+                  <span className="text-xs text-coffee-500">
+                    {accounts.find(a => a.name === selectedAccount)?.bank || 'Select account'}
+                  </span>
+                </div>
+                <span className="text-coffee-600 text-xl">→</span>
+              </button>
             </div>
+          </div>
+
+          {/* Withdrawal Button */}
+          <button
+            onClick={handleGenerateQR}
+            disabled={loading || !amount || parseFloat(amount) < 12 || !!error || !selectedAccount}
+            className="w-full mt-6 bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-4 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Processing...
+              </>
+            ) : (
+              <>
+                <span>💸</span>
+                <span>Instant Withdrawal</span>
+              </>
+            )}
+          </button>
+
+          {/* Withdrawal Instructions */}
+          <div className="mt-6 bg-coffee-50 rounded-xl p-4 border border-coffee-200">
+            <h4 className="font-bold text-coffee-800 mb-3">Withdrawal Instructions</h4>
+            <ul className="space-y-2 text-sm text-coffee-700">
+              <li className="flex items-start gap-2">
+                <span className="text-coffee-brown font-bold">•</span>
+                <span>Minimum withdrawal amount is RM 12</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-coffee-brown font-bold">•</span>
+                <span>Withdrawals are 24/7, multiple per day</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-coffee-brown font-bold">•</span>
+                <span>Withdrawal fee is 16%</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-coffee-brown font-bold">•</span>
+                <span>Arrival time about 2 hours; depends on bank</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-coffee-brown font-bold">•</span>
+                <span>Wrong info can cause failure</span>
+              </li>
+            </ul>
           </div>
 
           {/* QR Code Display */}
@@ -199,12 +277,59 @@ export default function WithdrawPage() {
                 <div className="bg-white p-4 rounded-lg inline-block">
                   <img src={qrCode} alt="QR Code" className="w-64 h-64" />
                 </div>
-                <p className="text-lg font-bold text-coffee-800 mt-3">${amount}</p>
+                <p className="text-lg font-bold text-coffee-800 mt-3">RM {amount}</p>
                 <p className="text-xs text-coffee-500 mt-2">Scan to complete payment</p>
               </div>
             </div>
           )}
         </div>
+
+        {/* Account Selection Modal */}
+        {showAccountModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full animate-slideUp border-2 border-coffee-200">
+              <div className="bg-gradient-to-r from-coffee-brown to-coffee-600 text-white p-6 rounded-t-3xl">
+                <h3 className="text-xl font-bold">Select Withdrawal Account</h3>
+                <p className="text-white/90 text-sm mt-1">Choose your bank account</p>
+              </div>
+              
+              <div className="p-6 space-y-3">
+                {accounts.map((account) => (
+                  <button
+                    key={account.id}
+                    onClick={() => {
+                      setSelectedAccount(account.name);
+                      setShowAccountModal(false);
+                    }}
+                    className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                      selectedAccount === account.name
+                        ? 'border-coffee-brown bg-coffee-50'
+                        : 'border-coffee-200 bg-white hover:bg-coffee-50 hover:border-coffee-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-coffee-800">{account.name}</p>
+                        <p className="text-sm text-coffee-600">{account.bank}</p>
+                        <p className="text-xs text-coffee-500 mt-1">****{account.account.slice(-4)}</p>
+                      </div>
+                      {selectedAccount === account.name && (
+                        <span className="text-2xl text-coffee-brown">✓</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => setShowAccountModal(false)}
+                  className="w-full mt-4 px-6 py-3 bg-coffee-200 text-coffee-800 rounded-xl font-semibold hover:bg-coffee-300 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Withdrawal History */}
         <div className="bg-white rounded-2xl shadow-xl p-6">

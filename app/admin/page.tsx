@@ -191,18 +191,47 @@ export default function AdminPage() {
       return;
     }
 
-    if (!confirm(`Add $${bulkAmount} to all ${users.length} users?`)) return;
+    if (users.length === 0) {
+      alert('No users found to add bonus to');
+      return;
+    }
+
+    if (!confirm(`Add RM ${bulkAmount} to all ${users.length} users?`)) return;
 
     try {
       const token = localStorage.getItem('adminToken');
-      // This would be a new API endpoint
-      alert('Bulk bonus feature - API endpoint needed');
-      setShowBulkActions(false);
-      setBulkAmount('');
-      setBulkReason('');
-      fetchUsers();
+      const res = await fetch('/api/admin/bulk-bonus', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(bulkAmount),
+          reason: bulkReason || 'Bulk bonus',
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Server error' }));
+        alert(errorData.error || 'Failed to add bulk bonus');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        alert(`Successfully added RM ${bulkAmount} to ${data.usersAffected} users!`);
+        setShowBulkActions(false);
+        setBulkAmount('');
+        setBulkReason('');
+        fetchUsers();
+        fetchStats();
+      } else {
+        alert(data.error || 'Failed to add bulk bonus');
+      }
     } catch (error) {
-      alert('Failed to add bulk bonus');
+      console.error('Bulk bonus error:', error);
+      alert('Connection error. Please try again.');
     }
   };
 

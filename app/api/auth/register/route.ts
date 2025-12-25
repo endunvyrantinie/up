@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, generateReferralCode } from '@/lib/auth';
 import { readUsers, writeUsers, findUserByEmail, findUserByReferralCode, readReferrals, writeReferrals } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { username, email, password, referralCode } = await request.json();

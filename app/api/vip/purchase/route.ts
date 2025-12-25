@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { readUsers, writeUsers, readReferrals, writeReferrals, readTransactions, writeTransactions, readVIPPurchases, writeVIPPurchases, VIPPurchase } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
 // VIP level calculation (simplified - based on total investment)
 const getVIPLevel = (totalInvestment: number): number => {
   if (totalInvestment >= 2000) return 3; // GOLD

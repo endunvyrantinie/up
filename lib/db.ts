@@ -58,9 +58,13 @@ export interface Transaction {
   userId: string;
   type: 'deposit' | 'withdrawal' | 'commission' | 'daily_reward' | 'vip_return';
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
+  amountAfterTax?: number;
+  tax?: number;
+  status: 'pending' | 'completed' | 'failed' | 'approved' | 'rejected';
   createdAt: string;
   description?: string;
+  qrCode?: string;
+  approveDate?: string;
 }
 
 export interface VIPPurchase {

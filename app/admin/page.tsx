@@ -94,11 +94,14 @@ export default function AdminPage() {
         localStorage.setItem('adminToken', data.token);
         setIsLoggedIn(true);
         fetchUsers();
+        fetchStats();
+        fetchTransactions();
       } else {
-        alert(data.error || 'Login failed');
+        alert(data.error || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
-      alert('Login failed');
+      console.error('Login error:', error);
+      alert('Login failed. Please try again.');
     }
   };
 

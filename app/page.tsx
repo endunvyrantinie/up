@@ -31,6 +31,13 @@ function HomeContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Server error' }));
+        setError(errorData.error || `Error: ${res.status} ${res.statusText}`);
+        return;
+      }
+      
       const data = await res.json();
       
       if (data.success) {
@@ -42,8 +49,8 @@ function HomeContent() {
         setError(data.error || 'Registration failed');
       }
     } catch (error) {
-      setError('Connection error. Please try again.');
       console.error('Registration error:', error);
+      setError('Connection error. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }

@@ -118,19 +118,52 @@ export const readVIPPurchases = (): VIPPurchase[] => {
 
 // Write functions
 export const writeUsers = (users: User[]) => {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  try {
+    // Ensure directory exists
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error writing users:', error);
+    throw error;
+  }
 };
 
 export const writeReferrals = (referrals: Referral[]) => {
-  fs.writeFileSync(REFERRALS_FILE, JSON.stringify(referrals, null, 2));
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(REFERRALS_FILE, JSON.stringify(referrals, null, 2));
+  } catch (error) {
+    console.error('Error writing referrals:', error);
+    throw error;
+  }
 };
 
 export const writeTransactions = (transactions: Transaction[]) => {
-  fs.writeFileSync(TRANSACTIONS_FILE, JSON.stringify(transactions, null, 2));
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(TRANSACTIONS_FILE, JSON.stringify(transactions, null, 2));
+  } catch (error) {
+    console.error('Error writing transactions:', error);
+    throw error;
+  }
 };
 
 export const writeVIPPurchases = (purchases: VIPPurchase[]) => {
-  fs.writeFileSync(VIP_PURCHASES_FILE, JSON.stringify(purchases, null, 2));
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(VIP_PURCHASES_FILE, JSON.stringify(purchases, null, 2));
+  } catch (error) {
+    console.error('Error writing VIP purchases:', error);
+    throw error;
+  }
 };
 
 // Helper functions

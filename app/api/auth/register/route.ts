@@ -110,9 +110,14 @@ export async function POST(request: NextRequest) {
         referralCode: newUser.referralCode,
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
+    const errorMessage = error?.message || 'Registration failed';
+    return NextResponse.json({ 
+      error: errorMessage.includes('ENOENT') || errorMessage.includes('EACCES') || errorMessage.includes('EPERM')
+        ? 'Database error. Please contact support.'
+        : 'Registration failed. Please try again.'
+    }, { status: 500 });
   }
 }
 

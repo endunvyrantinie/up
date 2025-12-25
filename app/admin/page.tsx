@@ -668,7 +668,7 @@ export default function AdminPage() {
                         return (
                           <tr key={w.id} className="border-b border-coffee-100">
                             <td className="py-2 px-3">{w.userId}</td>
-                            <td className="py-2 px-3 text-right font-semibold text-coffee-800">${w.amount.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-right font-semibold text-coffee-800">RM {w.amount.toFixed(2)}</td>
                             <td className="py-2 px-3 text-right text-yellow-600 font-medium">{timeLeft}</td>
                             <td className="py-2 px-3 text-center">
                               <button className="text-green-600 hover:underline text-xs">Approve</button>
@@ -725,7 +725,7 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 text-coffee-700">{user.email}</td>
                       <td className="py-3 px-4">
-                        <span className="font-semibold text-coffee-800">${user.balance.toFixed(2)}</span>
+                        <span className="font-semibold text-coffee-800">RM {user.balance.toFixed(2)}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -743,7 +743,7 @@ export default function AdminPage() {
                         <span className="font-medium text-coffee-800">{user.referralCount}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-green-600 font-semibold">${user.totalCommissions.toFixed(2)}</span>
+                        <span className="text-green-600 font-semibold">RM {user.totalCommissions.toFixed(2)}</span>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
@@ -828,7 +828,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">Balance</p>
-                    <p className="text-2xl font-bold text-coffee-800">${selectedUserDetails.balance.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-coffee-800">RM {selectedUserDetails.balance.toFixed(2)}</p>
                   </div>
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">VIP Level</p>
@@ -836,11 +836,11 @@ export default function AdminPage() {
                   </div>
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">Total Earned</p>
-                    <p className="text-2xl font-bold text-green-600">${selectedUserDetails.totalEarned.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-green-600">RM {selectedUserDetails.totalEarned.toFixed(2)}</p>
                   </div>
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">Total Withdrawn</p>
-                    <p className="text-2xl font-bold text-red-600">${selectedUserDetails.totalWithdrawn.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-red-600">RM {selectedUserDetails.totalWithdrawn.toFixed(2)}</p>
                   </div>
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">Referrals</p>
@@ -848,7 +848,7 @@ export default function AdminPage() {
                   </div>
                   <div className="bg-coffee-50 rounded-lg p-4">
                     <p className="text-sm text-coffee-600 mb-1">Commissions</p>
-                    <p className="text-2xl font-bold text-green-600">${selectedUserDetails.totalCommissions.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-green-600">RM {selectedUserDetails.totalCommissions.toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -885,7 +885,7 @@ export default function AdminPage() {
             </h3>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-coffee-600 mb-1">Current Balance: ${selectedUser.balance.toFixed(2)}</p>
+                <p className="text-sm text-coffee-600 mb-1">Current Balance: RM {selectedUser.balance.toFixed(2)}</p>
               </div>
               <input
                 type="number"
@@ -953,7 +953,7 @@ export default function AdminPage() {
                         </td>
                         <td className="py-2 px-2">{tx.userId}</td>
                         <td className="py-2 px-2 capitalize">{tx.type.replace('_', ' ')}</td>
-                        <td className="py-2 px-2 font-semibold">${tx.amount.toFixed(2)}</td>
+                        <td className="py-2 px-2 font-semibold">RM {tx.amount.toFixed(2)}</td>
                         <td className="py-2 px-2">
                           <span className={`px-2 py-1 rounded text-xs ${
                             tx.status === 'completed' ? 'bg-green-100 text-green-800' :

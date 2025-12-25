@@ -110,7 +110,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <div className="text-center mb-4">
             <p className="text-coffee-600 text-sm mb-2">Bonus Balance</p>
-            <p className="text-4xl font-bold text-coffee-800">${user.balance.toFixed(2)}</p>
+            <p className="text-4xl font-bold text-coffee-800">RM {user.balance.toFixed(2)}</p>
           </div>
           
           <div className="bg-coffee-50 rounded-lg p-3">
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-white rounded-xl shadow-lg p-6 text-center">
             <p className="text-sm text-coffee-600 mb-2">Total Commissions</p>
-            <p className="text-3xl font-bold text-green-600">${(user.totalCommissions || 0).toFixed(2)}</p>
+            <p className="text-3xl font-bold text-green-600">RM {(user.totalCommissions || 0).toFixed(2)}</p>
           </div>
         </div>
 
@@ -331,7 +331,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
 
       <div className="bg-coffee-50 rounded-lg p-4">
         <p className="text-sm text-coffee-600 mb-2">Total Commissions Earned:</p>
-        <p className="text-2xl font-bold text-coffee-800">${user.totalCommissions.toFixed(2)}</p>
+        <p className="text-2xl font-bold text-coffee-800">RM {user.totalCommissions.toFixed(2)}</p>
       </div>
 
       <button
@@ -354,7 +354,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                     {referralTree.level1.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
-                        <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
+                        <p className="text-coffee-600">Commission: RM {ref.commission.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -369,7 +369,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                     {referralTree.level2.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
-                        <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
+                        <p className="text-coffee-600">Commission: RM {ref.commission.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -384,7 +384,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                     {referralTree.level3.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
-                        <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
+                        <p className="text-coffee-600">Commission: RM {ref.commission.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>

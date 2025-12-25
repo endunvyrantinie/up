@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Transaction } from '@/lib/db';
 
 interface Withdrawal {
   id: string;
@@ -59,8 +60,8 @@ export default function WithdrawPage() {
       const data = await res.json();
       if (data.transactions) {
         const wd = data.transactions
-          .filter((t: any) => t.type === 'withdrawal')
-          .map((t: any) => ({
+          .filter((t: Transaction) => t.type === 'withdrawal')
+          .map((t: Transaction) => ({
             id: t.id,
             amount: t.amount,
             status: t.status,

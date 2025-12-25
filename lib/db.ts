@@ -66,6 +66,7 @@ export interface Transaction {
 export interface VIPPurchase {
   id: string;
   userId: string;
+  productId?: string;
   vipLevel: number;
   amount: number;
   dailyReturn: number;
@@ -164,4 +165,13 @@ export const getReferralCount = (userId: string, level: number = 1): number => {
   const referrals = readReferrals();
   return referrals.filter(r => r.referrerId === userId && r.level === level).length;
 };
+
+// Referral tree item interface
+export interface ReferralTreeItem {
+  id: string;
+  username: string;
+  level: number;
+  commission: number;
+  createdAt: string;
+}
 

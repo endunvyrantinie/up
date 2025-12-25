@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { findUserById, readUsers, writeUsers, readReferrals, writeReferrals, readTransactions, writeTransactions, readVIPPurchases, writeVIPPurchases } from '@/lib/db';
+import { readUsers, writeUsers, readReferrals, writeReferrals, readTransactions, writeTransactions, readVIPPurchases, writeVIPPurchases, VIPPurchase } from '@/lib/db';
 // VIP level calculation (simplified - based on total investment)
 const getVIPLevel = (totalInvestment: number): number => {
   if (totalInvestment >= 2000) return 3; // GOLD
@@ -43,17 +43,18 @@ export async function POST(request: NextRequest) {
     user.totalInvested = (user.totalInvested || 0) + amount;
 
     // Create VIP purchase/investment
-    const purchase = {
+    const createdAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000).toISOString();
+    const purchase: VIPPurchase = {
       id: Date.now().toString(),
       userId: user.id,
       productId,
+      vipLevel: user.vipLevel,
       amount,
-      dailyIncome,
-      validityDays,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'active',
-      daysCompleted: 0,
+      dailyReturn: dailyIncome,
+      daysRemaining: validityDays,
+      createdAt,
+      expiresAt,
     };
 
     const purchases = readVIPPurchases();

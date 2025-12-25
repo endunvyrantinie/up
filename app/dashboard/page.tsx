@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Notification from '@/components/Notification';
+import { Transaction, ReferralTreeItem } from '@/lib/db';
 
 interface User {
   id: string;
@@ -15,6 +16,12 @@ interface User {
   totalWithdrawn: number;
   referralCount: number;
   totalCommissions: number;
+}
+
+interface ReferralTree {
+  level1: ReferralTreeItem[];
+  level2: ReferralTreeItem[];
+  level3: ReferralTreeItem[];
 }
 
 export default function DashboardPage() {
@@ -256,7 +263,7 @@ function WithdrawTab({ user, onUpdate }: { user: User; onUpdate: () => void }) {
 
 function ReferralsTab({ user, referralLink }: { user: User; referralLink: string }) {
   const [copied, setCopied] = useState(false);
-  const [referralTree, setReferralTree] = useState<any>(null);
+  const [referralTree, setReferralTree] = useState<ReferralTree | null>(null);
   const [loading, setLoading] = useState(false);
   const [showTree, setShowTree] = useState(false);
 
@@ -344,7 +351,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                 <h4 className="font-semibold text-coffee-800 mb-2">Level 1 Referrals ({referralTree.level1.length})</h4>
                 {referralTree.level1.length > 0 ? (
                   <div className="space-y-2">
-                    {referralTree.level1.map((ref: any) => (
+                    {referralTree.level1.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
                         <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
@@ -359,7 +366,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                 <h4 className="font-semibold text-coffee-800 mb-2">Level 2 Referrals ({referralTree.level2.length})</h4>
                 {referralTree.level2.length > 0 ? (
                   <div className="space-y-2">
-                    {referralTree.level2.map((ref: any) => (
+                    {referralTree.level2.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
                         <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
@@ -374,7 +381,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
                 <h4 className="font-semibold text-coffee-800 mb-2">Level 3 Referrals ({referralTree.level3.length})</h4>
                 {referralTree.level3.length > 0 ? (
                   <div className="space-y-2">
-                    {referralTree.level3.map((ref: any) => (
+                    {referralTree.level3.map((ref) => (
                       <div key={ref.id} className="bg-coffee-50 p-2 rounded text-sm">
                         <p className="font-medium">{ref.username}</p>
                         <p className="text-coffee-600">Commission: ${ref.commission.toFixed(2)}</p>
@@ -396,7 +403,7 @@ function ReferralsTab({ user, referralLink }: { user: User; referralLink: string
 }
 
 function TransactionsTab() {
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 

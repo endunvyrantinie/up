@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Transaction } from '@/lib/db';
 
 interface User {
   id: string;
@@ -25,9 +26,24 @@ export default function AdminPage() {
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'transactions' | 'daily'>('dashboard');
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [processingDaily, setProcessingDaily] = useState(false);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<{
+    overview?: {
+      totalUsers?: number;
+      totalBalance?: number;
+      totalEarned?: number;
+      totalWithdrawn?: number;
+      totalReferrals?: number;
+      totalCommissions?: number;
+      totalTransactions?: number;
+      activeVIP?: number;
+      pendingWithdrawals?: number;
+    };
+    vipDistribution?: Record<string, number>;
+    topReferrers?: Array<{ username: string; referralCount: number; commissions: number }>;
+    transactionTypes?: Record<string, number>;
+  } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVIP, setFilterVIP] = useState<number | 'all'>('all');
   const [showUserDetails, setShowUserDetails] = useState(false);
@@ -37,7 +53,7 @@ export default function AdminPage() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [bulkAmount, setBulkAmount] = useState('');
   const [bulkReason, setBulkReason] = useState('');
-  const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<Transaction[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -137,7 +153,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.transactions) {
-        const pending = data.transactions.filter((t: any) => 
+        const pending = data.transactions.filter((t: Transaction) => 
           t.type === 'withdrawal' && t.status === 'pending'
         );
         setPendingWithdrawals(pending);
@@ -401,7 +417,7 @@ export default function AdminPage() {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-xl font-bold text-coffee-800 mb-4">🏆 Top Referrers</h3>
               <div className="space-y-3">
-                {(stats.topReferrers || []).map((ref: any, index: number) => (
+                {(stats.topReferrers || []).map((ref, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-coffee-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-coffee-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -566,7 +582,7 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pendingWithdrawals.map((w: any) => {
+                      {pendingWithdrawals.map((w: Transaction) => {
                         const hoursLeft = 24 - ((Date.now() - new Date(w.createdAt).getTime()) / (1000 * 60 * 60));
                         const timeLeft = hoursLeft > 0 
                           ? `${Math.floor(hoursLeft)}h ${Math.floor((hoursLeft % 1) * 60)}m`

@@ -3,10 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomTabBar from '@/components/BottomTabBar';
+import { ReferralTreeItem } from '@/lib/db';
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  referralCode: string;
+  balance: number;
+}
 
 export default function TeamPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [referralStats, setReferralStats] = useState({
     validUsers: 0,
@@ -56,12 +65,12 @@ export default function TeamPage() {
       if (data) {
         setReferralStats({
           validUsers: data.level1.length + data.level2.length + data.level3.length,
-          totalIncome: (data.level1.reduce((s: number, r: any) => s + r.commission, 0) +
-                       data.level2.reduce((s: number, r: any) => s + r.commission, 0) +
-                       data.level3.reduce((s: number, r: any) => s + r.commission, 0)),
-          level1: { count: data.level1.length, income: data.level1.reduce((s: number, r: any) => s + r.commission, 0) },
-          level2: { count: data.level2.length, income: data.level2.reduce((s: number, r: any) => s + r.commission, 0) },
-          level3: { count: data.level3.length, income: data.level3.reduce((s: number, r: any) => s + r.commission, 0) },
+          totalIncome: (data.level1.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0) +
+                       data.level2.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0) +
+                       data.level3.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0)),
+          level1: { count: data.level1.length, income: data.level1.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0) },
+          level2: { count: data.level2.length, income: data.level2.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0) },
+          level3: { count: data.level3.length, income: data.level3.reduce((s: number, r: ReferralTreeItem) => s + r.commission, 0) },
         });
       }
     } catch (error) {

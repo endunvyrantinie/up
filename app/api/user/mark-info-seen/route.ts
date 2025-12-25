@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/auth';
+import { findUserById, readUsers, writeUsers } from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const users = readUsers();
+    const user = users.find(u => u.id === decoded.userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    user.hasSeenInfoModal = true;
+    writeUsers(users);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Mark info seen error:', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  }
+}
+

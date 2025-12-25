@@ -107,19 +107,19 @@ function RegisterContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Coffee Logo */}
-        <div className="bg-coffee-brown text-white p-6 text-center">
-          <div className="text-5xl mb-2">☕</div>
-          <h1 className="text-2xl font-bold">Coffee Rewards</h1>
+        {/* Coffee Logo - Mobile Optimized */}
+        <div className="bg-coffee-brown text-white p-4 sm:p-6 text-center">
+          <div className="text-4xl sm:text-5xl mb-2">☕</div>
+          <h1 className="text-xl sm:text-2xl font-bold">Coffee Rewards</h1>
         </div>
 
-        {/* Coffee Image Placeholder */}
-        <div className="h-48 bg-gradient-to-br from-coffee-200 to-coffee-300 flex items-center justify-center">
-          <div className="text-6xl">☕</div>
+        {/* Coffee Image Placeholder - Mobile Optimized */}
+        <div className="h-40 sm:h-48 bg-gradient-to-br from-coffee-200 to-coffee-300 flex items-center justify-center">
+          <div className="text-5xl sm:text-6xl">☕</div>
         </div>
 
-        {/* Form */}
-        <div className="p-6">
+        {/* Form - Mobile Optimized */}
+        <div className="p-4 sm:p-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
               ⚠️ {error}

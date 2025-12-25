@@ -68,11 +68,11 @@ export default function LoginPage() {
       <div className="absolute top-0 left-0 w-96 h-96 bg-coffee-200/30 rounded-full -translate-x-48 -translate-y-48"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-coffee-300/30 rounded-full translate-x-48 translate-y-48"></div>
       
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border-2 border-coffee-100 relative z-10">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4 animate-pulse">☕</div>
-          <h1 className="text-4xl font-bold text-coffee-800 mb-2">Coffee Rewards</h1>
-          <p className="text-coffee-600 text-lg">Login to your account</p>
+      <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border-2 border-coffee-100 relative z-10">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-5xl sm:text-6xl mb-3 sm:mb-4 animate-pulse">☕</div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-coffee-800 mb-2">Coffee Rewards</h1>
+          <p className="text-coffee-600 text-base sm:text-lg">Login to your account</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-5">
           {error && (

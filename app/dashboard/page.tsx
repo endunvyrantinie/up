@@ -106,28 +106,28 @@ export default function DashboardPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Simple Balance Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="text-center mb-4">
-            <p className="text-coffee-600 text-sm mb-2">Bonus Balance</p>
-            <p className="text-4xl font-bold text-coffee-800">RM {user.balance.toFixed(2)}</p>
+        {/* Simple Balance Card - Mobile Optimized */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="text-center mb-3 sm:mb-4">
+            <p className="text-coffee-600 text-xs sm:text-sm mb-2">Bonus Balance</p>
+            <p className="text-3xl sm:text-4xl font-bold text-coffee-800">RM {user.balance.toFixed(2)}</p>
           </div>
           
-          <div className="bg-coffee-50 rounded-lg p-3">
-            <p className="text-xs text-coffee-600 mb-2">🔗 Your Referral Link</p>
+          <div className="bg-coffee-50 rounded-lg p-2 sm:p-3">
+            <p className="text-[10px] sm:text-xs text-coffee-600 mb-2">🔗 Your Referral Link</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={referralLink}
                 readOnly
-                className="flex-1 bg-white text-coffee-900 text-sm px-3 py-2 rounded border border-coffee-300 focus:outline-none"
+                className="flex-1 bg-white text-coffee-900 text-xs sm:text-sm px-2 sm:px-3 py-2 rounded border border-coffee-300 focus:outline-none"
               />
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(referralLink);
                   setNotification({ message: 'Link copied!', type: 'success' });
                 }}
-                className="bg-coffee-600 text-white px-4 py-2 rounded font-semibold text-sm hover:bg-coffee-700 transition"
+                className="bg-coffee-600 text-white px-3 sm:px-4 py-2 rounded font-semibold text-xs sm:text-sm active:bg-coffee-700 transition touch-manipulation min-h-[40px]"
               >
                 Copy
               </button>
@@ -135,29 +135,29 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Simple Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <p className="text-sm text-coffee-600 mb-2">Referral Count</p>
-            <p className="text-3xl font-bold text-coffee-800">{user.referralCount || 0}</p>
+        {/* Simple Stats - Mobile Optimized */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 text-center">
+            <p className="text-xs sm:text-sm text-coffee-600 mb-2">Referral Count</p>
+            <p className="text-2xl sm:text-3xl font-bold text-coffee-800">{user.referralCount || 0}</p>
           </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <p className="text-sm text-coffee-600 mb-2">Total Commissions</p>
-            <p className="text-3xl font-bold text-green-600">RM {(user.totalCommissions || 0).toFixed(2)}</p>
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 text-center">
+            <p className="text-xs sm:text-sm text-coffee-600 mb-2">Total Commissions</p>
+            <p className="text-2xl sm:text-3xl font-bold text-green-600">RM {(user.totalCommissions || 0).toFixed(2)}</p>
           </div>
         </div>
 
-        {/* Tabs - Simplified */}
+        {/* Tabs - Mobile Optimized */}
         <div className="bg-white rounded-2xl shadow-xl mb-6">
           <div className="flex border-b border-coffee-200 overflow-x-auto">
             {(['referrals', 'withdraw', 'transactions'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-sm font-semibold capitalize whitespace-nowrap ${
+                className={`flex-1 py-3 text-xs sm:text-sm font-semibold capitalize whitespace-nowrap touch-manipulation min-h-[48px] ${
                   activeTab === tab
                     ? 'text-coffee-600 border-b-2 border-coffee-600'
-                    : 'text-coffee-400'
+                    : 'text-coffee-400 active:text-coffee-600'
                 }`}
               >
                 {tab}

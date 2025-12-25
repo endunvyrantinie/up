@@ -113,31 +113,31 @@ function HomeContent() {
           <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-white/5 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
           
           <div className="relative z-10 text-center px-4">
-            <div className="text-8xl mb-3 animate-bounce" style={{ animationDuration: '2s' }}>☕</div>
-            <h1 className="text-white text-3xl font-bold mb-2 drop-shadow-lg">Coffee Rewards</h1>
-            <p className="text-white/90 text-base mt-2 font-semibold">Welcome back, {user.username || 'User'}</p>
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-white/80 text-xs">Online</span>
+            <div className="text-6xl sm:text-8xl mb-2 sm:mb-3 animate-bounce" style={{ animationDuration: '2s' }}>☕</div>
+            <h1 className="text-white text-xl sm:text-3xl font-bold mb-1 sm:mb-2 drop-shadow-lg">Coffee Rewards</h1>
+            <p className="text-white/90 text-sm sm:text-base mt-1 sm:mt-2 font-semibold truncate max-w-[90%] mx-auto">Welcome back, {user.username || 'User'}</p>
+            <div className="mt-2 sm:mt-3 flex items-center justify-center gap-2">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-white/80 text-[10px] sm:text-xs">Online</span>
             </div>
           </div>
         </div>
         
-        {/* Top right buttons - Enhanced */}
-        <div className="absolute top-4 right-4 flex gap-2 z-20">
+        {/* Top right buttons - Mobile Optimized */}
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1 sm:gap-2 z-20">
           <Link
             href="/daily-rewards"
-            className="bg-white/95 backdrop-blur-md text-coffee-brown px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 flex items-center gap-2 border-2 border-white/50"
+            className="bg-white/95 backdrop-blur-md text-coffee-brown px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold shadow-2xl active:bg-white active:scale-110 transition-all duration-300 flex items-center gap-1 sm:gap-2 border-2 border-white/50 touch-manipulation min-h-[36px]"
           >
-            <span className="text-lg">🎁</span>
-            <span>Daily</span>
+            <span className="text-sm sm:text-lg">🎁</span>
+            <span className="hidden sm:inline">Daily</span>
           </Link>
           <Link
             href="/customer-service"
-            className="bg-white/95 backdrop-blur-md text-coffee-brown px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 flex items-center gap-2 border-2 border-white/50"
+            className="bg-white/95 backdrop-blur-md text-coffee-brown px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold shadow-2xl active:bg-white active:scale-110 transition-all duration-300 flex items-center gap-1 sm:gap-2 border-2 border-white/50 touch-manipulation min-h-[36px]"
           >
-            <span className="text-lg">💬</span>
-            <span>Support</span>
+            <span className="text-sm sm:text-lg">💬</span>
+            <span className="hidden sm:inline">Support</span>
           </Link>
         </div>
         
@@ -147,97 +147,97 @@ function HomeContent() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 -mt-8">
-        {/* Action Buttons - Ultra Enhanced */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
-          <div className="flex justify-around gap-4">
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-8 mb-6 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
+          <div className="flex justify-around gap-2 sm:gap-4">
             <Link
               href="/recharge"
-              className="flex flex-col items-center gap-4 group flex-1"
+              className="flex flex-col items-center gap-2 sm:gap-4 group flex-1 active:scale-95 transition-transform"
             >
-              <div className="w-24 h-24 bg-gradient-to-br from-green-400 via-green-500 to-green-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-green-400 via-green-500 to-green-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl group-active:scale-110 transition-all duration-300 text-3xl sm:text-5xl relative overflow-hidden touch-manipulation">
+                <div className="absolute inset-0 bg-white/20 rounded-2xl sm:rounded-3xl transform scale-0 group-active:scale-100 transition-transform duration-300"></div>
                 <span className="relative z-10">💰</span>
               </div>
-              <span className="text-base font-bold text-coffee-800 group-hover:text-green-600 transition-all duration-300">Recharge</span>
+              <span className="text-xs sm:text-base font-bold text-coffee-800 group-active:text-green-600 transition-all duration-300">Recharge</span>
             </Link>
             <Link
               href="/withdraw"
-              className="flex flex-col items-center gap-4 group flex-1"
+              className="flex flex-col items-center gap-2 sm:gap-4 group flex-1 active:scale-95 transition-transform"
             >
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl group-active:scale-110 transition-all duration-300 text-3xl sm:text-5xl relative overflow-hidden touch-manipulation">
+                <div className="absolute inset-0 bg-white/20 rounded-2xl sm:rounded-3xl transform scale-0 group-active:scale-100 transition-transform duration-300"></div>
                 <span className="relative z-10">💸</span>
               </div>
-              <span className="text-base font-bold text-coffee-800 group-hover:text-blue-600 transition-all duration-300">Withdrawal</span>
+              <span className="text-xs sm:text-base font-bold text-coffee-800 group-active:text-blue-600 transition-all duration-300">Withdrawal</span>
             </Link>
             <Link
               href="/customer-service"
-              className="flex flex-col items-center gap-4 group flex-1"
+              className="flex flex-col items-center gap-2 sm:gap-4 group flex-1 active:scale-95 transition-transform"
             >
-              <div className="w-24 h-24 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl group-active:scale-110 transition-all duration-300 text-3xl sm:text-5xl relative overflow-hidden touch-manipulation">
+                <div className="absolute inset-0 bg-white/20 rounded-2xl sm:rounded-3xl transform scale-0 group-active:scale-100 transition-transform duration-300"></div>
                 <span className="relative z-10">💬</span>
               </div>
-              <span className="text-base font-bold text-coffee-800 group-hover:text-purple-600 transition-all duration-300">Service</span>
+              <span className="text-xs sm:text-base font-bold text-coffee-800 group-active:text-purple-600 transition-all duration-300">Service</span>
             </Link>
           </div>
         </div>
 
-        {/* Stats Cards - Ultra Enhanced */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-gradient-to-br from-white via-coffee-50 to-white rounded-3xl shadow-2xl p-8 border-2 border-coffee-200 hover:shadow-3xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-coffee-100/30 rounded-full -translate-y-16 translate-x-16"></div>
+        {/* Stats Cards - Mobile Optimized */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+          <div className="bg-gradient-to-br from-white via-coffee-50 to-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 border-2 border-coffee-200 active:shadow-3xl active:scale-[1.02] transition-all duration-300 relative overflow-hidden touch-manipulation">
+            <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-coffee-100/30 rounded-full -translate-y-12 translate-x-12 sm:-translate-y-16 sm:translate-x-16"></div>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-coffee-600 uppercase tracking-wider">Account Balance</p>
-                <span className="text-3xl animate-pulse">💳</span>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <p className="text-[10px] sm:text-xs font-bold text-coffee-600 uppercase tracking-wider">Account Balance</p>
+                <span className="text-2xl sm:text-3xl animate-pulse">💳</span>
               </div>
-              <p className="text-5xl font-bold text-coffee-800 mt-3 mb-4 drop-shadow-sm">RM {stats.walletBalance.toFixed(2)}</p>
-              <div className="mt-6 pt-4 border-t-2 border-coffee-200">
+              <p className="text-3xl sm:text-5xl font-bold text-coffee-800 mt-2 sm:mt-3 mb-3 sm:mb-4 drop-shadow-sm">RM {stats.walletBalance.toFixed(2)}</p>
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t-2 border-coffee-200">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-xs text-coffee-500 font-semibold">Available for withdrawal</p>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <p className="text-[10px] sm:text-xs text-coffee-500 font-semibold">Available for withdrawal</p>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-white via-green-50 to-white rounded-3xl shadow-2xl p-8 border-2 border-green-200 hover:shadow-3xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-100/30 rounded-full -translate-y-16 translate-x-16"></div>
+          <div className="bg-gradient-to-br from-white via-green-50 to-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 border-2 border-green-200 active:shadow-3xl active:scale-[1.02] transition-all duration-300 relative overflow-hidden touch-manipulation">
+            <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-green-100/30 rounded-full -translate-y-12 translate-x-12 sm:-translate-y-16 sm:translate-x-16"></div>
             <div className="relative z-10">
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Today's Income</p>
-                  <span className="text-2xl animate-bounce">📈</span>
+              <div className="mb-4 sm:mb-6">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <p className="text-[10px] sm:text-xs font-bold text-green-600 uppercase tracking-wider">Today's Income</p>
+                  <span className="text-xl sm:text-2xl animate-bounce">📈</span>
                 </div>
-                <p className="text-4xl font-bold text-green-600 drop-shadow-sm">RM {stats.todayIncome.toFixed(2)}</p>
+                <p className="text-2xl sm:text-4xl font-bold text-green-600 drop-shadow-sm">RM {stats.todayIncome.toFixed(2)}</p>
               </div>
-              <div className="pt-6 border-t-2 border-green-200">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-coffee-600 uppercase tracking-wider">Total Income</p>
-                  <span className="text-2xl">💰</span>
+              <div className="pt-4 sm:pt-6 border-t-2 border-green-200">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <p className="text-[10px] sm:text-xs font-bold text-coffee-600 uppercase tracking-wider">Total Income</p>
+                  <span className="text-xl sm:text-2xl">💰</span>
                 </div>
-                <p className="text-4xl font-bold text-coffee-800 drop-shadow-sm">RM {stats.totalIncome.toFixed(2)}</p>
+                <p className="text-2xl sm:text-4xl font-bold text-coffee-800 drop-shadow-sm">RM {stats.totalIncome.toFixed(2)}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Coffee Images Grid - Ultra Enhanced */}
-        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-24 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-2xl">⭐</span>
-            <h3 className="text-coffee-800 font-bold text-xl">Featured Products</h3>
-            <span className="text-2xl">⭐</span>
+        {/* Coffee Images Grid - Mobile Optimized */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 mb-20 sm:mb-24 border-2 border-coffee-100 active:shadow-3xl transition-all duration-300">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
+            <span className="text-xl sm:text-2xl">⭐</span>
+            <h3 className="text-coffee-800 font-bold text-base sm:text-xl">Featured Products</h3>
+            <span className="text-xl sm:text-2xl">⭐</span>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="aspect-square bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-2xl flex items-center justify-center text-6xl shadow-lg hover:shadow-2xl hover:scale-110 hover:rotate-3 transition-all duration-300 cursor-pointer relative overflow-hidden group"
+                className="aspect-square bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-xl sm:rounded-2xl flex items-center justify-center text-4xl sm:text-6xl shadow-lg active:shadow-2xl active:scale-110 transition-all duration-300 cursor-pointer relative overflow-hidden group touch-manipulation"
               >
-                <div className="absolute inset-0 bg-white/20 rounded-2xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
-                <span className="relative z-10 group-hover:scale-125 transition-transform duration-300">☕</span>
+                <div className="absolute inset-0 bg-white/20 rounded-xl sm:rounded-2xl transform scale-0 group-active:scale-100 transition-transform duration-300"></div>
+                <span className="relative z-10 group-active:scale-125 transition-transform duration-300">☕</span>
               </div>
             ))}
           </div>

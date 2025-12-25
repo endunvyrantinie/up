@@ -18,24 +18,24 @@ export default function BottomTabBar() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t-2 border-coffee-200 z-50 shadow-2xl">
-      <div className="flex justify-around items-center h-18 py-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t-2 border-coffee-200 z-50 shadow-2xl safe-area-bottom">
+      <div className="flex justify-around items-center min-h-[70px] py-2 px-2 pb-safe">
         {tabs.map((tab) => (
           <Link
             key={tab.path}
             href={tab.path}
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 ${
+            className={`flex flex-col items-center justify-center flex-1 h-full min-h-[60px] transition-all duration-300 active:scale-95 ${
               isActive(tab.path)
                 ? 'text-coffee-brown transform scale-110'
-                : 'text-coffee-400 hover:text-coffee-600'
+                : 'text-coffee-400 active:text-coffee-600'
             }`}
           >
-            <div className={`text-3xl mb-1 transition-all duration-300 ${
+            <div className={`text-3xl sm:text-4xl mb-1 transition-all duration-300 ${
               isActive(tab.path) ? 'animate-bounce' : ''
             }`}>
               {tab.icon}
             </div>
-            <span className={`text-xs font-bold transition-all duration-300 ${
+            <span className={`text-xs sm:text-sm font-bold transition-all duration-300 ${
               isActive(tab.path) ? 'text-coffee-brown' : ''
             }`}>
               {tab.label}

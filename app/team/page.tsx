@@ -91,12 +91,12 @@ export default function TeamPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20">
-      {/* Top Section */}
-      <div className="bg-coffee-brown text-white p-6 mb-6">
-        <div className="mb-4">
-          <p className="text-sm text-coffee-latte mb-2">Invitation code</p>
-          <p className="text-2xl font-bold">{user.referralCode}</p>
+    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20 sm:pb-24">
+      {/* Top Section - Mobile Optimized */}
+      <div className="bg-coffee-brown text-white p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="mb-3 sm:mb-4">
+          <p className="text-xs sm:text-sm text-coffee-latte mb-2">Invitation code</p>
+          <p className="text-xl sm:text-2xl font-bold">{user.referralCode}</p>
         </div>
         <div className="bg-white/10 rounded-lg p-3">
           <div className="flex gap-2">

@@ -109,15 +109,15 @@ export default function RechargePage() {
           <p className="text-4xl font-bold">RM {user.balance.toFixed(2)}</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6 border-2 border-coffee-100">
-          <h2 className="text-2xl font-bold text-coffee-800 mb-2 flex items-center gap-2">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 mb-6 border-2 border-coffee-100">
+          <h2 className="text-xl sm:text-2xl font-bold text-coffee-800 mb-2 flex items-center gap-2">
             <span>💳</span>
             <span>Recharge Amount</span>
           </h2>
-          <p className="text-sm text-coffee-600 mb-6">Minimum deposit: RM 50</p>
+          <p className="text-xs sm:text-sm text-coffee-600 mb-4 sm:mb-6">Minimum deposit: RM 50</p>
           
-          {/* Amount Chips - Enhanced */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* Amount Chips - Mobile Optimized */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6">
             {amountChips.map((chip) => (
               <button
                 key={chip}
@@ -125,10 +125,10 @@ export default function RechargePage() {
                   setSelectedAmount(chip);
                   setAmount(chip.toString());
                 }}
-                className={`py-4 px-4 rounded-xl font-bold transition-all duration-300 transform ${
+                className={`py-3 sm:py-4 px-2 sm:px-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform active:scale-105 touch-manipulation min-h-[48px] text-xs sm:text-sm ${
                   selectedAmount === chip
                     ? 'bg-gradient-to-r from-coffee-brown to-coffee-600 text-white shadow-lg scale-105'
-                    : 'bg-coffee-50 text-coffee-800 hover:bg-coffee-100 hover:scale-105 border-2 border-coffee-200'
+                    : 'bg-coffee-50 text-coffee-800 active:bg-coffee-100 border-2 border-coffee-200'
                 }`}
               >
                 RM {chip.toLocaleString()}

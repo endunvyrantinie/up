@@ -35,6 +35,7 @@ export interface User {
   vipLevel: number;
   totalEarned: number;
   totalWithdrawn: number;
+  totalInvested?: number;
   createdAt: string;
   lastCheckIn?: string;
   checkInStreak?: number;

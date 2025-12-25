@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Use /tmp directory in Vercel (read-write), otherwise use project data directory
+const isVercel = process.env.VERCEL === '1';
+const DATA_DIR = isVercel 
+  ? path.join(os.tmpdir(), 'coffee-rewards-data')
+  : path.join(process.cwd(), 'data');
+
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const REFERRALS_FILE = path.join(DATA_DIR, 'referrals.json');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
@@ -9,7 +15,11 @@ const VIP_PURCHASES_FILE = path.join(DATA_DIR, 'vip_purchases.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (error) {
+    console.error('Failed to create data directory:', error);
+  }
 }
 
 // Initialize files if they don't exist

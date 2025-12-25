@@ -39,29 +39,55 @@ function RegisterContent() {
           referralCode: formData.referralCode || undefined,
         }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Server error' }));
+        setError(errorData.error || `Error: ${res.status} ${res.statusText}`);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
 
       if (data.success) {
         // Auto login
-        const loginRes = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: `${formData.phone}@coffee.com`,
-            password: formData.password,
-          }),
-        });
-        const loginData = await loginRes.json();
+        try {
+          const loginRes = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: `${formData.phone}@coffee.com`,
+              password: formData.password,
+            }),
+          });
 
-        if (loginData.success) {
-          localStorage.setItem('token', loginData.token);
-          router.push('/home?showInfo=true');
+          if (!loginRes.ok) {
+            setError('Registration successful, but auto-login failed. Please login manually.');
+            setLoading(false);
+            setTimeout(() => router.push('/login'), 2000);
+            return;
+          }
+
+          const loginData = await loginRes.json();
+
+          if (loginData.success) {
+            localStorage.setItem('token', loginData.token);
+            router.push('/home?showInfo=true');
+          } else {
+            setError('Registration successful, but auto-login failed. Please login manually.');
+            setTimeout(() => router.push('/login'), 2000);
+          }
+        } catch (loginError) {
+          console.error('Auto-login error:', loginError);
+          setError('Registration successful, but auto-login failed. Please login manually.');
+          setTimeout(() => router.push('/login'), 2000);
         }
       } else {
         setError(data.error || 'Registration failed');
       }
     } catch (error) {
-      setError('Registration failed');
+      console.error('Registration error:', error);
+      setError('Connection error. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }

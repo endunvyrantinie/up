@@ -112,11 +112,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Registration error:', error);
-    const errorMessage = error?.message || 'Registration failed';
+    const errorMessage = error?.message || String(error) || 'Registration failed';
+    
+    // Check for file system errors
+    if (errorMessage.includes('ENOENT') || errorMessage.includes('EACCES') || errorMessage.includes('EPERM') || errorMessage.includes('EROFS')) {
+      console.error('File system error:', errorMessage);
+      return NextResponse.json({ 
+        error: 'Database write error. This is a known limitation on Vercel. Please use a database like MongoDB for production.'
+      }, { status: 500 });
+    }
+    
     return NextResponse.json({ 
-      error: errorMessage.includes('ENOENT') || errorMessage.includes('EACCES') || errorMessage.includes('EPERM')
-        ? 'Database error. Please contact support.'
-        : 'Registration failed. Please try again.'
+      error: errorMessage || 'Registration failed. Please try again.'
     }, { status: 500 });
   }
 }

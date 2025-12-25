@@ -11,15 +11,30 @@ export default function LoginPage() {
     password: '',
   });
 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+    
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Server error' }));
+        setError(errorData.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+      
       const data = await res.json();
+      
       if (data.success) {
         localStorage.setItem('token', data.token);
         if (data.user?.isAdmin) {
@@ -29,10 +44,13 @@ export default function LoginPage() {
           router.push('/home?showInfo=true');
         }
       } else {
-        alert(data.error || 'Login failed');
+        setError(data.error || 'Login failed');
       }
     } catch (error) {
-      alert('Login failed. Please try again.');
+      console.error('Login error:', error);
+      setError('Connection error. Please check your internet and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,27 +62,49 @@ export default function LoginPage() {
           <p className="text-coffee-600">Login to your account</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              ⚠️ {error}
+            </div>
+          )}
+          
           <input
             type="email"
             placeholder="Email"
             required
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900 placeholder-coffee-400"
+            onChange={(e) => {
+              setFormData({ ...formData, email: e.target.value });
+              setError('');
+            }}
+            disabled={loading}
+            className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
           />
           <input
             type="password"
             placeholder="Password"
             required
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900 placeholder-coffee-400"
+            onChange={(e) => {
+              setFormData({ ...formData, password: e.target.value });
+              setError('');
+            }}
+            disabled={loading}
+            className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
           />
           <button
             type="submit"
-            className="w-full bg-coffee-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-coffee-700 transition"
+            disabled={loading}
+            className="w-full bg-coffee-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-coffee-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Login
+            {loading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
           </button>
         </form>
         <div className="mt-6 text-center">

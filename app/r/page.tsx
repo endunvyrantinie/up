@@ -64,23 +64,34 @@ function RegisterContent() {
           if (!loginRes.ok) {
             setError('Registration successful, but auto-login failed. Please login manually.');
             setLoading(false);
-            setTimeout(() => router.push('/login'), 2000);
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
             return;
           }
 
           const loginData = await loginRes.json();
 
           if (loginData.success) {
+            // Clear any existing tokens first
+            localStorage.removeItem('token');
+            localStorage.removeItem('adminToken');
+            // Set new token
             localStorage.setItem('token', loginData.token);
-            router.push('/home?showInfo=true');
+            // Use window.location for clean redirect
+            window.location.href = '/home?showInfo=true';
           } else {
             setError('Registration successful, but auto-login failed. Please login manually.');
-            setTimeout(() => router.push('/login'), 2000);
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
           }
         } catch (loginError) {
           console.error('Auto-login error:', loginError);
           setError('Registration successful, but auto-login failed. Please login manually.');
-          setTimeout(() => router.push('/login'), 2000);
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
         }
       } else {
         setError(data.error || 'Registration failed');

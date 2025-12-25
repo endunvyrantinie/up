@@ -36,9 +36,23 @@ function HomeContent() {
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
       const res = await fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      
+      if (!res.ok) {
+        // Token invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
+        router.push('/login');
+        return;
+      }
+      
       const data = await res.json();
       if (data.user) {
         setUser(data.user);
@@ -48,9 +62,14 @@ function HomeContent() {
           totalIncome: data.user.totalEarned || 0,
         });
       } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
         router.push('/login');
       }
     } catch (error) {
+      console.error('Fetch user error:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('adminToken');
       router.push('/login');
     } finally {
       setLoading(false);
@@ -85,118 +104,140 @@ function HomeContent() {
     <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
       <InformationModal isOpen={showInfo} onClose={handleCloseInfo} />
 
-      {/* Top Banner - Enhanced */}
+      {/* Top Banner - Ultra Enhanced */}
       <div className="relative overflow-hidden">
-        <div className="h-56 bg-gradient-to-br from-coffee-brown via-coffee-600 to-coffee-700 flex items-center justify-center relative">
-          {/* Decorative circles */}
-          <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16"></div>
-          <div className="absolute bottom-0 right-0 w-40 h-40 bg-white/10 rounded-full translate-x-20 translate-y-20"></div>
+        <div className="h-64 bg-gradient-to-br from-coffee-brown via-coffee-600 to-coffee-700 flex items-center justify-center relative shadow-2xl">
+          {/* Animated decorative circles */}
+          <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-20 -translate-y-20 animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full translate-x-24 translate-y-24 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-white/5 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
           
-          <div className="relative z-10 text-center">
-            <div className="text-7xl mb-2 animate-pulse">☕</div>
-            <h1 className="text-white text-xl font-bold">Coffee Rewards</h1>
-            <p className="text-white/80 text-sm mt-1">Welcome back, {user.username}</p>
+          <div className="relative z-10 text-center px-4">
+            <div className="text-8xl mb-3 animate-bounce" style={{ animationDuration: '2s' }}>☕</div>
+            <h1 className="text-white text-3xl font-bold mb-2 drop-shadow-lg">Coffee Rewards</h1>
+            <p className="text-white/90 text-base mt-2 font-semibold">Welcome back, {user.username || 'User'}</p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-white/80 text-xs">Online</span>
+            </div>
           </div>
         </div>
         
-        {/* Top right buttons */}
+        {/* Top right buttons - Enhanced */}
         <div className="absolute top-4 right-4 flex gap-2 z-20">
           <Link
             href="/daily-rewards"
-            className="bg-white/95 backdrop-blur-sm text-coffee-brown px-4 py-2 rounded-full text-xs font-bold shadow-xl hover:bg-white hover:scale-105 transition-all duration-200 flex items-center gap-1"
+            className="bg-white/95 backdrop-blur-md text-coffee-brown px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 flex items-center gap-2 border-2 border-white/50"
           >
-            <span>🎁</span>
+            <span className="text-lg">🎁</span>
             <span>Daily</span>
           </Link>
           <Link
             href="/customer-service"
-            className="bg-white/95 backdrop-blur-sm text-coffee-brown px-4 py-2 rounded-full text-xs font-bold shadow-xl hover:bg-white hover:scale-105 transition-all duration-200 flex items-center gap-1"
+            className="bg-white/95 backdrop-blur-md text-coffee-brown px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 flex items-center gap-2 border-2 border-white/50"
           >
-            <span>💬</span>
+            <span className="text-lg">💬</span>
             <span>Support</span>
           </Link>
         </div>
         
-        {/* Bottom accent bar */}
-        <div className="h-1 bg-gradient-to-r from-coffee-brown via-coffee-600 to-coffee-brown"></div>
+        {/* Bottom accent bar with gradient */}
+        <div className="h-2 bg-gradient-to-r from-coffee-brown via-coffee-600 to-coffee-brown shadow-lg"></div>
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 -mt-8">
-        {/* Action Buttons - Enhanced */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6 border border-coffee-100">
-          <div className="flex justify-around">
+        {/* Action Buttons - Ultra Enhanced */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
+          <div className="flex justify-around gap-4">
             <Link
               href="/recharge"
-              className="flex flex-col items-center gap-3 group"
+              className="flex flex-col items-center gap-4 group flex-1"
             >
-              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 text-4xl">
-                💰
+              <div className="w-24 h-24 bg-gradient-to-br from-green-400 via-green-500 to-green-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                <span className="relative z-10">💰</span>
               </div>
-              <span className="text-sm font-bold text-coffee-800 group-hover:text-coffee-brown transition">Recharge</span>
+              <span className="text-base font-bold text-coffee-800 group-hover:text-green-600 transition-all duration-300">Recharge</span>
             </Link>
             <Link
               href="/withdraw"
-              className="flex flex-col items-center gap-3 group"
+              className="flex flex-col items-center gap-4 group flex-1"
             >
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 text-4xl">
-                💸
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                <span className="relative z-10">💸</span>
               </div>
-              <span className="text-sm font-bold text-coffee-800 group-hover:text-coffee-brown transition">Withdrawal</span>
+              <span className="text-base font-bold text-coffee-800 group-hover:text-blue-600 transition-all duration-300">Withdrawal</span>
             </Link>
             <Link
               href="/customer-service"
-              className="flex flex-col items-center gap-3 group"
+              className="flex flex-col items-center gap-4 group flex-1"
             >
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 text-4xl">
-                💬
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 transition-all duration-300 text-5xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 rounded-3xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                <span className="relative z-10">💬</span>
               </div>
-              <span className="text-sm font-bold text-coffee-800 group-hover:text-coffee-brown transition">Service</span>
+              <span className="text-base font-bold text-coffee-800 group-hover:text-purple-600 transition-all duration-300">Service</span>
             </Link>
           </div>
         </div>
 
-        {/* Stats Cards - Enhanced */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-white to-coffee-50 rounded-2xl shadow-xl p-6 border-2 border-coffee-200 hover:shadow-2xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-coffee-600 uppercase tracking-wide">Account Balance</p>
-              <span className="text-2xl">💳</span>
-            </div>
-            <p className="text-4xl font-bold text-coffee-800 mt-2">RM {stats.walletBalance.toFixed(2)}</p>
-            <div className="mt-4 pt-4 border-t border-coffee-200">
-              <p className="text-xs text-coffee-500">Available for withdrawal</p>
+        {/* Stats Cards - Ultra Enhanced */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-gradient-to-br from-white via-coffee-50 to-white rounded-3xl shadow-2xl p-8 border-2 border-coffee-200 hover:shadow-3xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-coffee-100/30 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-coffee-600 uppercase tracking-wider">Account Balance</p>
+                <span className="text-3xl animate-pulse">💳</span>
+              </div>
+              <p className="text-5xl font-bold text-coffee-800 mt-3 mb-4 drop-shadow-sm">RM {stats.walletBalance.toFixed(2)}</p>
+              <div className="mt-6 pt-4 border-t-2 border-coffee-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <p className="text-xs text-coffee-500 font-semibold">Available for withdrawal</p>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-white to-green-50 rounded-2xl shadow-xl p-6 border-2 border-green-200 hover:shadow-2xl transition-all duration-300">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-green-600 uppercase tracking-wide">Today's Income</p>
-                <span className="text-xl">📈</span>
+          <div className="bg-gradient-to-br from-white via-green-50 to-white rounded-3xl shadow-2xl p-8 border-2 border-green-200 hover:shadow-3xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-green-100/30 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="relative z-10">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Today's Income</p>
+                  <span className="text-2xl animate-bounce">📈</span>
+                </div>
+                <p className="text-4xl font-bold text-green-600 drop-shadow-sm">RM {stats.todayIncome.toFixed(2)}</p>
               </div>
-              <p className="text-3xl font-bold text-green-600">RM {stats.todayIncome.toFixed(2)}</p>
-            </div>
-            <div className="pt-4 border-t border-green-200">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-coffee-600 uppercase tracking-wide">Total Income</p>
-                <span className="text-xl">💰</span>
+              <div className="pt-6 border-t-2 border-green-200">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-coffee-600 uppercase tracking-wider">Total Income</p>
+                  <span className="text-2xl">💰</span>
+                </div>
+                <p className="text-4xl font-bold text-coffee-800 drop-shadow-sm">RM {stats.totalIncome.toFixed(2)}</p>
               </div>
-              <p className="text-3xl font-bold text-coffee-800">RM {stats.totalIncome.toFixed(2)}</p>
             </div>
           </div>
         </div>
 
-        {/* Coffee Images Grid - Enhanced */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 mb-24 border border-coffee-100">
-          <h3 className="text-coffee-800 font-bold text-center mb-4 text-lg">Featured Products</h3>
-          <div className="grid grid-cols-3 gap-3">
+        {/* Coffee Images Grid - Ultra Enhanced */}
+        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-24 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-2xl">⭐</span>
+            <h3 className="text-coffee-800 font-bold text-xl">Featured Products</h3>
+            <span className="text-2xl">⭐</span>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="aspect-square bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-xl flex items-center justify-center text-5xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
+                className="aspect-square bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-2xl flex items-center justify-center text-6xl shadow-lg hover:shadow-2xl hover:scale-110 hover:rotate-3 transition-all duration-300 cursor-pointer relative overflow-hidden group"
               >
-                ☕
+                <div className="absolute inset-0 bg-white/20 rounded-2xl transform scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                <span className="relative z-10 group-hover:scale-125 transition-transform duration-300">☕</span>
               </div>
             ))}
           </div>

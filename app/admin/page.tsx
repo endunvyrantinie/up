@@ -106,6 +106,10 @@ export default function AdminPage() {
       const data = await res.json();
       
       if (data.success) {
+        // Clear any existing tokens first
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
+        // Set new token
         localStorage.setItem('adminToken', data.token);
         setIsLoggedIn(true);
         fetchUsers();

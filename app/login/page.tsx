@@ -36,15 +36,23 @@ export default function LoginPage() {
       const data = await res.json();
       
       if (data.success) {
+        // Clear any existing tokens first
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
+        
+        // Set new token
         localStorage.setItem('token', data.token);
         if (data.user?.isAdmin) {
           localStorage.setItem('adminToken', data.token);
-          router.push('/admin');
+          // Use window.location for admin to ensure clean redirect
+          window.location.href = '/admin';
         } else {
-          router.push('/home?showInfo=true');
+          // Use window.location for user to ensure clean redirect
+          window.location.href = '/home?showInfo=true';
         }
       } else {
         setError(data.error || 'Login failed');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);

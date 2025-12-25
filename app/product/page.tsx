@@ -92,54 +92,87 @@ export default function ProductPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20">
-      {/* Top Card */}
-      <div className="bg-white rounded-b-2xl shadow-lg p-6 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+      {/* Enhanced Top Card */}
+      <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-2xl rounded-b-3xl mb-6">
         <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm text-coffee-600 mb-1">My income</p>
-            <p className="text-2xl font-bold text-coffee-800">RM {user.totalEarned?.toFixed(2) || '0.00'}</p>
+          <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+            <p className="text-white/90 text-sm mb-1">💰 My Income</p>
+            <p className="text-3xl font-bold">RM {user.totalEarned?.toFixed(2) || '0.00'}</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-coffee-600 mb-1">My coffee points</p>
-            <p className="text-2xl font-bold text-coffee-800">{user.totalInvested || 0}</p>
+          <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+            <p className="text-white/90 text-sm mb-1">☕ Coffee Points</p>
+            <p className="text-3xl font-bold">{user.totalInvested || 0}</p>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pb-20">
-        {/* VIP Plans List */}
-        <div className="space-y-4">
+      <div className="container mx-auto px-4 pb-24">
+        {/* VIP Plans List - Enhanced */}
+        <div className="space-y-6">
           {VIP_PLANS.map((plan) => (
-            <div key={plan.id} className="bg-white rounded-xl shadow-lg p-5 border border-coffee-200">
-              <div className="flex gap-4">
-                {/* Product Image */}
-                <div className="w-24 h-24 bg-gradient-to-br from-coffee-200 to-coffee-300 rounded-lg flex items-center justify-center text-4xl flex-shrink-0">
+            <div key={plan.id} className="bg-white rounded-3xl shadow-2xl p-6 border-2 border-coffee-200 hover:shadow-3xl transition-all duration-300 transform hover:scale-[1.02]">
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Product Image - Enhanced */}
+                <div className="w-32 h-32 bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-2xl flex items-center justify-center text-6xl flex-shrink-0 shadow-lg">
                   ☕
                 </div>
 
-                {/* Plan Details */}
+                {/* Plan Details - Enhanced */}
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-coffee-800 mb-3">{plan.name}</h3>
-                  <div className="space-y-2 text-sm text-coffee-700">
-                    <p>Validity period: <span className="font-semibold">{plan.validityDays} days</span></p>
-                    <p>Total income: <span className="font-semibold text-green-600">RM {plan.totalIncome.toFixed(2)}</span></p>
-                    <p>Daily income: <span className="font-semibold text-green-600">RM {plan.dailyIncome.toFixed(2)}</span></p>
-                    <p>Price: <span className="font-semibold text-coffee-800">RM {plan.price.toFixed(2)}</span></p>
-                    <p className="text-xs text-coffee-500 mt-2">
-                      Earnings will be automatically settled 24 hours after purchase
-                    </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-coffee-800">{plan.name}</h3>
+                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-1 rounded-full text-xs font-bold">
+                      {plan.validityDays} Days
+                    </span>
                   </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-green-50 rounded-xl p-3 border border-green-200">
+                      <p className="text-xs text-green-600 mb-1">💰 Total Income</p>
+                      <p className="text-lg font-bold text-green-700">RM {plan.totalIncome.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                      <p className="text-xs text-blue-600 mb-1">📈 Daily Income</p>
+                      <p className="text-lg font-bold text-blue-700">RM {plan.dailyIncome.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-coffee-50 rounded-xl p-4 mb-3 border border-coffee-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-coffee-600">Price:</span>
+                      <span className="text-2xl font-bold text-coffee-800">RM {plan.price.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-coffee-500 bg-coffee-50 rounded-lg p-2">
+                    ⏰ Earnings will be automatically settled 24 hours after purchase
+                  </p>
                 </div>
 
-                {/* Buy Button */}
-                <div className="flex items-center">
+                {/* Buy Button - Enhanced */}
+                <div className="flex items-center md:items-end">
                   <button
                     onClick={() => handlePurchase(plan.id)}
                     disabled={purchasing === plan.id || user.balance < plan.price}
-                    className="bg-coffee-brown text-white px-6 py-3 rounded-lg font-semibold hover:bg-coffee-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    className="w-full md:w-auto bg-gradient-to-r from-coffee-brown to-coffee-600 text-white px-8 py-4 rounded-xl font-bold hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                   >
-                    {purchasing === plan.id ? 'Processing...' : 'Buy'}
+                    {purchasing === plan.id ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        <span>Processing...</span>
+                      </>
+                    ) : user.balance < plan.price ? (
+                      <>
+                        <span>❌</span>
+                        <span>Insufficient</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🛒</span>
+                        <span>Buy Now</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

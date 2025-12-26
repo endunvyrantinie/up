@@ -13,9 +13,9 @@ function HomeContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
+    phone: '',
     password: '',
+    repeatPassword: '',
     referralCode: referralCode,
   });
 
@@ -24,34 +24,88 @@ function HomeContent() {
     setLoading(true);
     setError('');
     setSuccess('');
+
+    if (formData.password !== formData.repeatPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
     
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          phone: formData.phone,
+          password: formData.password,
+          referralCode: formData.referralCode || undefined,
+        }),
       });
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Server error' }));
         setError(errorData.error || `Error: ${res.status} ${res.statusText}`);
+        setLoading(false);
         return;
       }
       
       const data = await res.json();
       
       if (data.success) {
-        setSuccess('Registration successful! Please login.');
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+        // Auto login
+        try {
+          const loginRes = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: formData.phone,
+              password: formData.password,
+            }),
+          });
+
+          if (!loginRes.ok) {
+            setSuccess('Registration successful! Please login.');
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            return;
+          }
+
+          const loginData = await loginRes.json();
+
+          if (loginData.success && loginData.token) {
+            // Clear ALL existing tokens and data first
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Small delay to ensure storage is cleared
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Set new token
+            localStorage.setItem('token', loginData.token);
+            // Use window.location for clean redirect
+            window.location.href = '/home?showInfo=true';
+            return;
+          } else {
+            setSuccess('Registration successful! Please login.');
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+          }
+        } catch (loginError) {
+          console.error('Auto-login error:', loginError);
+          setSuccess('Registration successful! Please login.');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        }
       } else {
         setError(data.error || 'Registration failed');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Registration error:', error);
       setError('Connection error. Please check your internet connection and try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -106,50 +160,75 @@ function HomeContent() {
                   </div>
                 )}
                 
-                <input
-                  type="text"
-                  placeholder="Username"
-                  required
-                  value={formData.username}
-                  onChange={(e) => {
-                    setFormData({ ...formData, username: e.target.value });
-                    setError('');
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({ ...formData, email: e.target.value });
-                    setError('');
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value });
-                    setError('');
-                  }}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Referral Code (Optional)"
-                  value={formData.referralCode}
-                  onChange={(e) => setFormData({ ...formData, referralCode: e.target.value })}
-                  disabled={loading}
-                  className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-coffee-800 mb-2">
+                    Mobile Phone
+                  </label>
+                  <div className="flex">
+                    <div className="bg-coffee-50 border border-coffee-300 border-r-0 rounded-l-lg px-4 py-3 flex items-center">
+                      <span className="text-coffee-700 font-semibold">+60</span>
+                    </div>
+                    <input
+                      type="tel"
+                      placeholder="Enter phone number"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        setError('');
+                      }}
+                      disabled={loading}
+                      className="flex-1 px-4 py-3 border border-coffee-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-coffee-800 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Enter password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      setError('');
+                    }}
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-coffee-800 mb-2">
+                    Repeat Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Repeat password"
+                    required
+                    value={formData.repeatPassword}
+                    onChange={(e) => {
+                      setFormData({ ...formData, repeatPassword: e.target.value });
+                      setError('');
+                    }}
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-coffee-800 mb-2">
+                    Referral Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Referral code (optional)"
+                    value={formData.referralCode}
+                    onChange={(e) => setFormData({ ...formData, referralCode: e.target.value })}
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={loading}

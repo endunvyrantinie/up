@@ -251,6 +251,35 @@ export default function AdminPage() {
     }
   };
 
+  const handleApproveWithdrawal = async (transactionId: string) => {
+    if (!confirm('Approve this withdrawal request?')) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/approve-withdrawal', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transactionId }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Withdrawal approved successfully!');
+        fetchPendingWithdrawals();
+        fetchTransactions();
+        fetchStats();
+      } else {
+        alert(data.error || 'Failed to approve withdrawal');
+      }
+    } catch (error) {
+      console.error('Approve withdrawal error:', error);
+      alert('Connection error. Please try again.');
+    }
+  };
+
   const handleBulkBonus = async () => {
     if (!bulkAmount || parseFloat(bulkAmount) <= 0) {
       alert('Please enter a valid amount');
@@ -733,7 +762,12 @@ export default function AdminPage() {
                             <td className="py-2 px-3 text-right font-semibold text-coffee-800">RM {w.amount.toFixed(2)}</td>
                             <td className="py-2 px-3 text-right text-yellow-600 font-medium">{timeLeft}</td>
                             <td className="py-2 px-3 text-center">
-                              <button className="text-green-600 hover:underline text-xs">Approve</button>
+                              <button 
+                                onClick={() => handleApproveWithdrawal(w.id)}
+                                className="text-green-600 hover:underline text-xs font-semibold"
+                              >
+                                Approve
+                              </button>
                             </td>
                           </tr>
                         );

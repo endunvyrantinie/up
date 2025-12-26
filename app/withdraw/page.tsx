@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
+import BottomTabBar from '@/components/BottomTabBar';
 import { Transaction } from '@/lib/db';
 
 interface Withdrawal {
@@ -154,147 +156,165 @@ export default function WithdrawPage() {
 
   return (
     <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
-      <div className="bg-coffee-800 text-white p-4">
+      {/* Enhanced Header - Mobile App Style */}
+      <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-xl">
         <div className="container mx-auto flex justify-between items-center">
-          <button onClick={() => router.push('/dashboard')} className="text-sm hover:underline">
-            ← Back to Dashboard
-          </button>
-          <h1 className="text-xl font-bold">☕ Coffee Rewards</h1>
-          <div></div>
+          <Link href="/home" className="text-sm hover:text-coffee-200 transition flex items-center gap-2 active:scale-95">
+            <span className="text-xl">←</span>
+            <span className="hidden sm:inline">Back</span>
+          </Link>
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <span>💸</span>
+            <span>Withdrawal</span>
+          </h1>
+          <div className="w-16"></div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Current Balance */}
-        <div className="bg-gradient-to-br from-coffee-brown to-coffee-700 rounded-2xl shadow-2xl p-6 mb-6 text-white">
-          <p className="text-coffee-latte text-sm mb-2">Account balance</p>
-          <p className="text-5xl font-bold mb-4">RM {user.balance.toFixed(2)}</p>
+      <div className="container mx-auto px-4 py-6 -mt-4">
+        {/* Current Balance - Enhanced Mobile Card */}
+        <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-3xl shadow-2xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden mobile-card">
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-white/10 rounded-full -translate-y-16 translate-x-16 sm:-translate-y-24 sm:translate-x-24"></div>
+          <div className="relative z-10">
+            <p className="text-white/90 text-sm sm:text-base mb-2 font-semibold">💰 Account Balance</p>
+            <p className="text-4xl sm:text-6xl font-bold mb-2 drop-shadow-lg">RM {user.balance.toFixed(2)}</p>
+            <div className="flex items-center gap-2 mt-3">
+              <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+              <span className="text-white/80 text-xs sm:text-sm">Available for withdrawal</span>
+            </div>
+          </div>
         </div>
 
-        {/* Withdrawal Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <h2 className="text-2xl font-bold text-coffee-800 mb-4">Withdrawal amount</h2>
-          <div className="space-y-4">
+        {/* Withdrawal Form - Enhanced Mobile App Style */}
+        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-6 mb-6 border-2 border-coffee-100 mobile-card">
+          <h2 className="text-xl sm:text-2xl font-bold text-coffee-800 mb-4 sm:mb-6 flex items-center gap-2">
+            <span>💵</span>
+            <span>Withdrawal Amount</span>
+          </h2>
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-coffee-800 mb-2">
-                RM Please enter withdrawal amount
+              <label className="block text-sm sm:text-base font-bold text-coffee-800 mb-3">
+                Enter Withdrawal Amount
               </label>
-              <input
-                type="number"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setAmount(value);
-                  setError('');
-                  
-                  if (value && parseFloat(value) < 12) {
-                    setError('Minimum withdrawal is RM 12');
-                  } else if (value && user && parseFloat(value) > user.balance) {
-                    setError(`Insufficient balance. Available: RM ${user.balance.toFixed(2)}`);
-                  } else {
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-coffee-600 font-bold text-lg">RM</span>
+                <input
+                  type="number"
+                  placeholder="Enter amount (min RM 12)"
+                  value={amount}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setAmount(value);
                     setError('');
-                  }
-                }}
-                className="w-full px-4 py-3 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
-              />
+                    
+                    if (value && parseFloat(value) < 12) {
+                      setError('Minimum withdrawal is RM 12');
+                    } else if (value && user && parseFloat(value) > user.balance) {
+                      setError(`Insufficient balance. Available: RM ${user.balance.toFixed(2)}`);
+                    } else {
+                      setError('');
+                    }
+                  }}
+                  className="w-full pl-12 pr-4 py-4 sm:py-5 border-2 border-coffee-300 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 bg-white text-coffee-900 text-lg sm:text-xl font-semibold"
+                />
+              </div>
               {error && (
-                <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
-                  ⚠️ {error}
+                <div className="mt-3 bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2 animate-slideUp">
+                  <span className="text-xl">⚠️</span>
+                  <span>{error}</span>
                 </div>
               )}
             </div>
             
             {amount && parseFloat(amount) > 0 && parseFloat(amount) >= 12 && !error && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 animate-slideUp">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-coffee-600">Amount received:</span>
-                  <span className="text-lg font-bold text-green-600">
+                  <span className="text-sm sm:text-base text-coffee-700 font-semibold">💰 Amount Received:</span>
+                  <span className="text-xl sm:text-2xl font-bold text-green-600">
                     RM {(parseFloat(amount) * 0.84).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-end">
-                  <span className="text-xs text-coffee-500">Tax: 16%</span>
+                <div className="flex justify-between items-center pt-2 border-t border-green-200">
+                  <span className="text-xs sm:text-sm text-coffee-600">Withdrawal Amount:</span>
+                  <span className="text-sm sm:text-base font-semibold text-coffee-800">RM {parseFloat(amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <span className="text-xs sm:text-sm text-coffee-500 font-medium">Tax: 16% (RM {(parseFloat(amount) * 0.16).toFixed(2)})</span>
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-coffee-800 mb-2">
-                Please select your withdrawal account
+              <label className="block text-sm sm:text-base font-bold text-coffee-800 mb-3">
+                🏦 Select Withdrawal Account
               </label>
               <button
                 type="button"
                 onClick={() => setShowAccountModal(true)}
-                className="w-full bg-coffee-50 border border-coffee-300 rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-coffee-100 transition text-left"
+                className="w-full bg-gradient-to-r from-coffee-50 to-coffee-100 border-2 border-coffee-300 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex justify-between items-center cursor-pointer hover:bg-coffee-100 active:scale-95 transition-all duration-300 text-left touch-manipulation group"
               >
-                <div>
-                  <span className="font-semibold text-coffee-800 block">{selectedAccount}</span>
-                  <span className="text-xs text-coffee-500">
-                    {accounts.find(a => a.name === selectedAccount)?.bank || 'Select account'}
+                <div className="flex-1">
+                  <span className="font-bold text-coffee-800 block text-base sm:text-lg mb-1">{selectedAccount}</span>
+                  <span className="text-xs sm:text-sm text-coffee-600">
+                    {accounts.find(a => a.name === selectedAccount)?.bank || 'Tap to select account'}
                   </span>
                 </div>
-                <span className="text-coffee-600 text-xl">→</span>
+                <span className="text-coffee-600 text-2xl sm:text-3xl group-active:translate-x-1 transition-transform">→</span>
               </button>
             </div>
           </div>
 
-          {/* Withdrawal Button */}
+          {/* Withdrawal Button - Enhanced Mobile App Style */}
           <button
             onClick={handleGenerateQR}
             disabled={loading || !amount || (amount ? parseFloat(amount) < 12 : true) || !!error || !selectedAccount}
-            className="w-full mt-6 bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-4 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+            className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-5 sm:py-6 rounded-2xl font-bold text-lg sm:text-xl hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-2xl hover:shadow-3xl transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 touch-target no-select"
           >
             {loading ? (
               <>
-                <span className="animate-spin">⏳</span>
-                Processing...
+                <span className="animate-spin text-2xl">⏳</span>
+                <span>Processing...</span>
               </>
             ) : (
               <>
-                <span>💸</span>
-                <span>Instant Withdrawal</span>
+                <span className="text-2xl">💸</span>
+                <span>Submit Withdrawal Request</span>
               </>
             )}
           </button>
 
-          {/* Withdrawal Instructions */}
-          <div className="mt-6 bg-coffee-50 rounded-xl p-4 border border-coffee-200">
-            <h4 className="font-bold text-coffee-800 mb-3">Withdrawal Instructions</h4>
-            <ul className="space-y-2 text-sm text-coffee-700">
-              <li className="flex items-start gap-2">
-                <span className="text-coffee-brown font-bold">•</span>
-                <span>Minimum withdrawal amount is RM 12</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-coffee-brown font-bold">•</span>
-                <span>Withdrawals are 24/7, multiple per day</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-coffee-brown font-bold">•</span>
-                <span>Withdrawal fee is 16%</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-coffee-brown font-bold">•</span>
-                <span>Arrival time about 2 hours; depends on bank</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-coffee-brown font-bold">•</span>
-                <span>Wrong info can cause failure</span>
-              </li>
+          {/* Withdrawal Instructions - Enhanced Mobile Card */}
+          <div className="mt-6 sm:mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl sm:rounded-3xl p-5 sm:p-6 border-2 border-blue-200 mobile-card">
+            <h4 className="font-bold text-coffee-800 mb-4 sm:mb-5 text-lg sm:text-xl flex items-center gap-2">
+              <span>📋</span>
+              <span>Withdrawal Instructions</span>
+            </h4>
+            <ul className="space-y-3 sm:space-y-4">
+              {[
+                { icon: '💰', text: 'Minimum withdrawal amount is RM 12' },
+                { icon: '⏰', text: 'Withdrawals are available 24/7, multiple times per day' },
+                { icon: '💳', text: 'Withdrawal fee is 16% (automatically deducted)' },
+                { icon: '🚀', text: 'Processing time: approximately 2 hours (depends on bank)' },
+                { icon: '⚠️', text: 'Please verify account information to avoid transaction failure' },
+              ].map((item, index) => (
+                <li key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl hover:bg-white/80 transition">
+                  <span className="text-xl sm:text-2xl">{item.icon}</span>
+                  <span className="text-sm sm:text-base text-coffee-700 flex-1 pt-0.5 font-medium">{item.text}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* QR Code Display */}
+          {/* QR Code Display - Enhanced Mobile App Style */}
           {qrCode && (
-            <div className="mt-6 text-center">
-              <div className="bg-coffee-50 rounded-xl p-6 inline-block">
-                <p className="text-sm text-coffee-600 mb-3">CoffeePay QR Code</p>
-                <div className="bg-white p-4 rounded-lg inline-block">
-                  <img src={qrCode} alt="QR Code" className="w-64 h-64" />
+            <div className="mt-6 sm:mt-8 text-center animate-slideUp">
+              <div className="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-2xl sm:rounded-3xl p-6 sm:p-8 inline-block border-2 border-coffee-200 shadow-xl">
+                <p className="text-sm sm:text-base text-coffee-700 mb-4 font-semibold">☕ CoffeePay QR Code</p>
+                <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl inline-block shadow-lg mb-4">
+                  <img src={qrCode} alt="QR Code" className="w-64 h-64 sm:w-72 sm:h-72" />
                 </div>
-                <p className="text-lg font-bold text-coffee-800 mt-3">RM {amount}</p>
-                <p className="text-xs text-coffee-500 mt-2">Scan to complete payment</p>
+                <p className="text-xl sm:text-2xl font-bold text-coffee-800 mt-3 mb-2">RM {parseFloat(amount).toFixed(2)}</p>
+                <p className="text-xs sm:text-sm text-coffee-600 mt-2 font-medium">Scan QR code to complete withdrawal</p>
               </div>
             </div>
           )}
@@ -347,53 +367,59 @@ export default function WithdrawPage() {
           </div>
         )}
 
-        {/* Withdrawal History */}
-        <div className="bg-white rounded-2xl shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-coffee-800 mb-4">Withdrawal History</h2>
+        {/* Withdrawal History - Enhanced Mobile App Style */}
+        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-6 border-2 border-coffee-100 mobile-card">
+          <h2 className="text-xl sm:text-2xl font-bold text-coffee-800 mb-4 sm:mb-6 flex items-center gap-2">
+            <span>📜</span>
+            <span>Withdrawal History</span>
+          </h2>
           {withdrawals.length === 0 ? (
-            <div className="text-center py-8 text-coffee-400">
-              <p>No withdrawal requests yet</p>
+            <div className="text-center py-12 text-coffee-400">
+              <div className="text-5xl mb-4">📭</div>
+              <p className="text-base sm:text-lg font-semibold">No withdrawal requests yet</p>
+              <p className="text-sm text-coffee-500 mt-2">Your withdrawal history will appear here</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-coffee-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-coffee-800">Date</th>
-                    <th className="text-right py-3 px-4 font-semibold text-coffee-800">Amount</th>
-                    <th className="text-center py-3 px-4 font-semibold text-coffee-800">Status</th>
-                    <th className="text-right py-3 px-4 font-semibold text-coffee-800">Time Left</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {withdrawals.map((wd) => (
-                    <tr key={wd.id} className="border-b border-coffee-100">
-                      <td className="py-3 px-4 text-coffee-700">
-                        {new Date(wd.requestDate).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-right font-semibold text-coffee-800">
-                        RM {wd.amount.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${
-                          wd.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          wd.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {wd.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right text-coffee-600">
-                        {wd.status === 'pending' ? getTimeRemaining(wd.requestDate) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3 sm:space-y-4">
+              {withdrawals.map((wd) => (
+                <div key={wd.id} className="bg-gradient-to-r from-coffee-50 to-coffee-100 rounded-xl sm:rounded-2xl p-4 sm:p-5 border-2 border-coffee-200 hover:shadow-lg transition-all duration-300">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="text-xs sm:text-sm text-coffee-600 font-medium mb-1">
+                        {new Date(wd.requestDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-coffee-800">RM {wd.amount.toFixed(2)}</p>
+                    </div>
+                    <span className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${
+                      wd.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      wd.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {wd.status === 'approved' ? '✓ Approved' : 
+                       wd.status === 'rejected' ? '✗ Rejected' : 
+                       '⏳ Pending'}
+                    </span>
+                  </div>
+                  {wd.status === 'pending' && (
+                    <div className="flex items-center justify-between pt-3 border-t border-coffee-200">
+                      <span className="text-xs sm:text-sm text-coffee-600 font-medium">⏰ Processing Time:</span>
+                      <span className="text-sm sm:text-base font-bold text-coffee-800">{getTimeRemaining(wd.requestDate)}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      <BottomTabBar />
     </div>
   );
 }

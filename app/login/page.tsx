@@ -7,9 +7,50 @@ import Link from 'next/link';
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    countryCode: '+60',
     phone: '',
     password: '',
   });
+
+  // Popular country codes
+  const countryCodes = [
+    { code: '+60', country: '🇲🇾 Malaysia', flag: '🇲🇾' },
+    { code: '+1', country: '🇺🇸 USA/Canada', flag: '🇺🇸' },
+    { code: '+44', country: '🇬🇧 UK', flag: '🇬🇧' },
+    { code: '+86', country: '🇨🇳 China', flag: '🇨🇳' },
+    { code: '+91', country: '🇮🇳 India', flag: '🇮🇳' },
+    { code: '+62', country: '🇮🇩 Indonesia', flag: '🇮🇩' },
+    { code: '+65', country: '🇸🇬 Singapore', flag: '🇸🇬' },
+    { code: '+66', country: '🇹🇭 Thailand', flag: '🇹🇭' },
+    { code: '+84', country: '🇻🇳 Vietnam', flag: '🇻🇳' },
+    { code: '+63', country: '🇵🇭 Philippines', flag: '🇵🇭' },
+    { code: '+81', country: '🇯🇵 Japan', flag: '🇯🇵' },
+    { code: '+82', country: '🇰🇷 South Korea', flag: '🇰🇷' },
+    { code: '+61', country: '🇦🇺 Australia', flag: '🇦🇺' },
+    { code: '+64', country: '🇳🇿 New Zealand', flag: '🇳🇿' },
+    { code: '+971', country: '🇦🇪 UAE', flag: '🇦🇪' },
+    { code: '+966', country: '🇸🇦 Saudi Arabia', flag: '🇸🇦' },
+    { code: '+7', country: '🇷🇺 Russia/Kazakhstan', flag: '🇷🇺' },
+    { code: '+49', country: '🇩🇪 Germany', flag: '🇩🇪' },
+    { code: '+33', country: '🇫🇷 France', flag: '🇫🇷' },
+    { code: '+39', country: '🇮🇹 Italy', flag: '🇮🇹' },
+    { code: '+34', country: '🇪🇸 Spain', flag: '🇪🇸' },
+    { code: '+31', country: '🇳🇱 Netherlands', flag: '🇳🇱' },
+    { code: '+32', country: '🇧🇪 Belgium', flag: '🇧🇪' },
+    { code: '+41', country: '🇨🇭 Switzerland', flag: '🇨🇭' },
+    { code: '+46', country: '🇸🇪 Sweden', flag: '🇸🇪' },
+    { code: '+47', country: '🇳🇴 Norway', flag: '🇳🇴' },
+    { code: '+45', country: '🇩🇰 Denmark', flag: '🇩🇰' },
+    { code: '+358', country: '🇫🇮 Finland', flag: '🇫🇮' },
+    { code: '+48', country: '🇵🇱 Poland', flag: '🇵🇱' },
+    { code: '+90', country: '🇹🇷 Turkey', flag: '🇹🇷' },
+    { code: '+20', country: '🇪🇬 Egypt', flag: '🇪🇬' },
+    { code: '+27', country: '🇿🇦 South Africa', flag: '🇿🇦' },
+    { code: '+55', country: '🇧🇷 Brazil', flag: '🇧🇷' },
+    { code: '+52', country: '🇲🇽 Mexico', flag: '🇲🇽' },
+    { code: '+54', country: '🇦🇷 Argentina', flag: '🇦🇷' },
+    { code: '+351', country: '🇵🇹 Portugal', flag: '🇵🇹' },
+  ];
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +62,17 @@ export default function LoginPage() {
     
     try {
       // Normalize phone number (remove spaces, dashes, etc.)
-      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '');
+      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
+      
+      // Combine country code and phone number
+      const fullPhoneNumber = formData.countryCode + normalizedPhone;
+      
+      // Basic validation: phone should have at least 5 digits
+      if (normalizedPhone.length < 5) {
+        setError('Please enter a valid phone number (at least 5 digits)');
+        setLoading(false);
+        return;
+      }
       
       // Clear any existing tokens before login attempt
       localStorage.removeItem('token');
@@ -31,7 +82,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: normalizedPhone,
+          phone: fullPhoneNumber, // Send full phone number with country code
           password: formData.password,
         }),
       });
@@ -103,8 +154,26 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-bold text-coffee-800 mb-2">📱 Phone Number</label>
             <div className="flex">
-              <div className="bg-coffee-50 border-2 border-coffee-300 border-r-0 rounded-l-xl px-4 py-4 flex items-center">
-                <span className="text-coffee-700 font-semibold">+60</span>
+              <div className="relative">
+                <select
+                  value={formData.countryCode}
+                  onChange={(e) => {
+                    setFormData({ ...formData, countryCode: e.target.value });
+                    setError('');
+                  }}
+                  disabled={loading}
+                  className="bg-coffee-50 border-2 border-coffee-300 border-r-0 rounded-l-xl px-3 py-4 text-coffee-700 font-semibold focus:outline-none focus:ring-2 focus:ring-coffee-500 appearance-none cursor-pointer pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ minWidth: '100px' }}
+                >
+                  {countryCodes.map((cc) => (
+                    <option key={cc.code} value={cc.code}>
+                      {cc.flag} {cc.code}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <span className="text-coffee-600">▼</span>
+                </div>
               </div>
               <input
                 type="tel"
@@ -112,13 +181,16 @@ export default function LoginPage() {
                 required
                 value={formData.phone}
                 onChange={(e) => {
-                  setFormData({ ...formData, phone: e.target.value });
+                  // Only allow numbers, spaces, dashes, and parentheses
+                  const value = e.target.value.replace(/[^\d\s\-()]/g, '');
+                  setFormData({ ...formData, phone: value });
                   setError('');
                 }}
                 disabled={loading}
                 className="flex-1 px-4 py-4 border-2 border-coffee-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400 text-lg transition-all"
               />
             </div>
+            <p className="text-xs text-coffee-500 mt-1">Enter your phone number without country code</p>
           </div>
           
           <div>

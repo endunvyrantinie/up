@@ -39,6 +39,9 @@ export default function AdminPage() {
   const [pendingWithdrawals, setPendingWithdrawals] = useState<Transaction[]>([]);
   const [bulkBonusAmount, setBulkBonusAmount] = useState('');
   const [bulkBonusReason, setBulkBonusReason] = useState('');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState<string>('all');
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
 
   useEffect(() => {
     const adminToken = localStorage.getItem('adminToken');
@@ -401,177 +404,519 @@ export default function AdminPage() {
         </div>
 
         {activeTab === 'dashboard' && stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-coffee-600 text-sm font-semibold mb-2">Total Users</h3>
-              <p className="text-3xl font-bold text-coffee-800">{stats.overview?.totalUsers || 0}</p>
+          <div className="space-y-6">
+            {/* Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Users</h3>
+                  <span className="text-2xl">👥</span>
+                </div>
+                <p className="text-4xl font-bold">{stats.overview?.totalUsers || 0}</p>
+                <p className="text-xs opacity-75 mt-2">Registered users</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Balance</h3>
+                  <span className="text-2xl">💰</span>
+                </div>
+                <p className="text-4xl font-bold">RM {stats.overview?.totalBalance?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs opacity-75 mt-2">All user balances</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Earned</h3>
+                  <span className="text-2xl">📈</span>
+                </div>
+                <p className="text-4xl font-bold">RM {stats.overview?.totalEarned?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs opacity-75 mt-2">Total earnings</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Withdrawn</h3>
+                  <span className="text-2xl">💸</span>
+                </div>
+                <p className="text-4xl font-bold">RM {stats.overview?.totalWithdrawn?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs opacity-75 mt-2">Total withdrawals</p>
+              </div>
             </div>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-coffee-600 text-sm font-semibold mb-2">Total Balance</h3>
-              <p className="text-3xl font-bold text-coffee-800">RM {stats.overview?.totalBalance?.toFixed(2) || '0.00'}</p>
+
+            {/* Secondary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <h3 className="text-coffee-600 text-sm font-semibold mb-2">Active VIP</h3>
+                <p className="text-3xl font-bold text-coffee-800">{stats.overview?.activeVIP || 0}</p>
+                <p className="text-xs text-coffee-500 mt-1">Active investments</p>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <h3 className="text-coffee-600 text-sm font-semibold mb-2">Total Referrals</h3>
+                <p className="text-3xl font-bold text-coffee-800">{stats.overview?.totalReferrals || 0}</p>
+                <p className="text-xs text-coffee-500 mt-1">Referral connections</p>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <h3 className="text-coffee-600 text-sm font-semibold mb-2">Total Commissions</h3>
+                <p className="text-3xl font-bold text-coffee-800">RM {stats.overview?.totalCommissions?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs text-coffee-500 mt-1">Commission paid</p>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                <h3 className="text-coffee-600 text-sm font-semibold mb-2">Pending Withdrawals</h3>
+                <p className="text-3xl font-bold text-coffee-800">{stats.overview?.pendingWithdrawals || 0}</p>
+                <p className="text-xs text-coffee-500 mt-1">Awaiting approval</p>
+              </div>
             </div>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-coffee-600 text-sm font-semibold mb-2">Pending Withdrawals</h3>
-              <p className="text-3xl font-bold text-coffee-800">{stats.overview?.pendingWithdrawals || 0}</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-coffee-600 text-sm font-semibold mb-2">Pending Amount</h3>
-              <p className="text-3xl font-bold text-coffee-800">RM {stats.overview?.pendingAmount?.toFixed(2) || '0.00'}</p>
+
+            {/* Pending Withdrawals Alert */}
+            {stats.overview?.pendingWithdrawals > 0 && (
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-red-800 mb-2">⚠️ Pending Withdrawals</h3>
+                    <p className="text-red-700">
+                      <strong>{stats.overview.pendingWithdrawals}</strong> withdrawal(s) pending approval
+                    </p>
+                    <p className="text-red-600 mt-1">
+                      Total amount: <strong>RM {stats.overview.pendingAmount?.toFixed(2) || '0.00'}</strong>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('transactions')}
+                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-semibold"
+                  >
+                    Review Now
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* VIP Distribution */}
+            {stats.vipDistribution && (
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-xl font-bold text-coffee-800 mb-4">VIP Level Distribution</h3>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {Object.entries(stats.vipDistribution).map(([level, count]: [string, any]) => (
+                    <div key={level} className="text-center p-4 bg-coffee-50 rounded-lg">
+                      <p className="text-2xl font-bold text-coffee-800">{count}</p>
+                      <p className="text-sm text-coffee-600 mt-1">{level.replace('level', 'VIP ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Types */}
+            {stats.transactionTypes && (
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-xl font-bold text-coffee-800 mb-4">Transaction Types</h3>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {Object.entries(stats.transactionTypes).map(([type, count]: [string, any]) => (
+                    <div key={type} className="p-4 bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-lg border border-coffee-200">
+                      <p className="text-2xl font-bold text-coffee-800">{count}</p>
+                      <p className="text-sm text-coffee-600 mt-1 capitalize">{type.replace('_', ' ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top Referrers */}
+            {stats.topReferrers && stats.topReferrers.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-xl font-bold text-coffee-800 mb-4">🏆 Top Referrers</h3>
+                <div className="space-y-3">
+                  {stats.topReferrers.map((referrer: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-coffee-50 to-coffee-100 rounded-lg border border-coffee-200">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-coffee-500 to-coffee-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-bold text-coffee-800">{referrer.username}</p>
+                          <p className="text-sm text-coffee-600">{referrer.referralCount} referrals</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-coffee-800">RM {referrer.commissions?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs text-coffee-500">Commissions</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold text-coffee-800 mb-4">📊 Quick Stats</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-600 font-semibold">Recent Users (7 days)</p>
+                  <p className="text-2xl font-bold text-blue-800">{stats.overview?.recentUsers || 0}</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-semibold">Total Transactions</p>
+                  <p className="text-2xl font-bold text-green-800">{stats.overview?.totalTransactions || 0}</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-600 font-semibold">Pending Amount</p>
+                  <p className="text-2xl font-bold text-purple-800">RM {stats.overview?.pendingAmount?.toFixed(2) || '0.00'}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === 'users' && (
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <div className="mb-4 flex gap-4">
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-4 py-2 border border-coffee-300 rounded-lg"
-              />
-              <select
-                value={vipFilter}
-                onChange={(e) => setVipFilter(e.target.value)}
-                className="px-4 py-2 border border-coffee-300 rounded-lg"
-              >
-                <option value="all">All VIP Levels</option>
-                <option value="0">VIP 0</option>
-                <option value="1">VIP 1</option>
-                <option value="2">VIP 2</option>
-                <option value="3">VIP 3</option>
-              </select>
-            </div>
-
-            <div className="mb-4 p-4 bg-coffee-50 rounded-lg">
-              <h3 className="font-semibold text-coffee-800 mb-2">Bulk Bonus</h3>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  value={bulkBonusAmount}
-                  onChange={(e) => setBulkBonusAmount(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-coffee-300 rounded-lg"
-                />
-                <input
-                  type="text"
-                  placeholder="Reason (optional)"
-                  value={bulkBonusReason}
-                  onChange={(e) => setBulkBonusReason(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-coffee-300 rounded-lg"
-                />
-                <button
-                  onClick={handleBulkBonus}
-                  className="bg-coffee-600 text-white px-6 py-2 rounded-lg hover:bg-coffee-700"
+          <div className="space-y-6">
+            {/* Search and Filter Bar */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    placeholder="🔍 Search by username, phone, or referral code..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-3 pl-10 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                  />
+                  <span className="absolute left-3 top-3.5 text-coffee-400">🔍</span>
+                </div>
+                <select
+                  value={vipFilter}
+                  onChange={(e) => {
+                    setVipFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white"
                 >
-                  Add to All
-                </button>
+                  <option value="all">All VIP Levels</option>
+                  <option value="0">VIP 0</option>
+                  <option value="1">VIP 1</option>
+                  <option value="2">VIP 2</option>
+                  <option value="3">VIP 3</option>
+                </select>
+              </div>
+
+              {/* Bulk Bonus Section */}
+              <div className="p-5 bg-gradient-to-r from-coffee-50 to-coffee-100 rounded-xl border-2 border-coffee-200">
+                <h3 className="font-bold text-coffee-800 mb-3 flex items-center gap-2">
+                  <span>🎁</span>
+                  <span>Bulk Bonus - Add to All Users</span>
+                </h3>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input
+                    type="number"
+                    placeholder="Amount (RM)"
+                    value={bulkBonusAmount}
+                    onChange={(e) => setBulkBonusAmount(e.target.value)}
+                    className="flex-1 px-4 py-3 border-2 border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Reason (optional)"
+                    value={bulkBonusReason}
+                    onChange={(e) => setBulkBonusReason(e.target.value)}
+                    className="flex-1 px-4 py-3 border-2 border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  />
+                  <button
+                    onClick={handleBulkBonus}
+                    className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white px-8 py-3 rounded-lg hover:from-coffee-700 hover:to-coffee-800 transition font-semibold shadow-lg"
+                  >
+                    ➕ Add to All ({filteredUsers.length} users)
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-coffee-200">
-                    <th className="text-left p-2">Username</th>
-                    <th className="text-left p-2">Balance</th>
-                    <th className="text-left p-2">VIP</th>
-                    <th className="text-left p-2">Referrals</th>
-                    <th className="text-left p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-coffee-100">
-                      <td className="p-2">{user.username}</td>
-                      <td className="p-2">RM {user.balance.toFixed(2)}</td>
-                      <td className="p-2">VIP {user.vipLevel}</td>
-                      <td className="p-2">{user.referralCount || 0}</td>
-                      <td className="p-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                        >
-                          Adjust
-                        </button>
-                      </td>
+            {/* Users Table */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-coffee-200">
+                <h2 className="text-2xl font-bold text-coffee-800">
+                  Users ({filteredUsers.length})
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-coffee-50 to-coffee-100">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-coffee-800">User</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Phone</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Balance</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">VIP</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Referrals</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Commissions</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Earned</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="mt-4 flex justify-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border border-coffee-300 rounded disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2">{currentPage} / {totalPages}</span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-coffee-300 rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
+                  </thead>
+                  <tbody>
+                    {paginatedUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-coffee-500">
+                          No users found
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
+                          <td className="p-4">
+                            <div>
+                              <p className="font-semibold text-coffee-800">{user.username}</p>
+                              <p className="text-xs text-coffee-500">{user.referralCode}</p>
+                            </div>
+                          </td>
+                          <td className="p-4 text-coffee-700">{user.email?.replace('@coffee.com', '') || user.username}</td>
+                          <td className="p-4">
+                            <span className="font-bold text-green-600">RM {user.balance.toFixed(2)}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              user.vipLevel === 0 ? 'bg-gray-100 text-gray-700' :
+                              user.vipLevel === 1 ? 'bg-blue-100 text-blue-700' :
+                              user.vipLevel === 2 ? 'bg-purple-100 text-purple-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              VIP {user.vipLevel}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="font-semibold text-coffee-800">{user.referralCount || 0}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-purple-600 font-semibold">RM {(user.totalCommissions || 0).toFixed(2)}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-green-600 font-semibold">RM {(user.totalEarned || 0).toFixed(2)}</span>
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => setSelectedUser(user)}
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-600 hover:to-blue-700 transition font-semibold shadow-md"
+                            >
+                              ⚙️ Manage
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-coffee-200 flex items-center justify-between">
+                  <p className="text-sm text-coffee-600">
+                    Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, filteredUsers.length)} of {filteredUsers.length} users
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 border-2 border-coffee-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-coffee-50 transition font-semibold"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="px-4 py-2 bg-coffee-100 rounded-lg font-semibold text-coffee-800">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 border-2 border-coffee-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-coffee-50 transition font-semibold"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {activeTab === 'transactions' && (
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-coffee-800 mb-4">All Transactions</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-coffee-200">
-                    <th className="text-left p-2">Type</th>
-                    <th className="text-left p-2">Amount</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-left p-2">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.slice(0, 50).map((t) => (
-                    <tr key={t.id} className="border-b border-coffee-100">
-                      <td className="p-2">{t.type}</td>
-                      <td className="p-2">RM {t.amount.toFixed(2)}</td>
-                      <td className="p-2">{t.status}</td>
-                      <td className="p-2">{new Date(t.createdAt).toLocaleDateString()}</td>
+          <div className="space-y-6">
+            {/* Pending Withdrawals Section */}
+            {pendingWithdrawals.length > 0 && (
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-2xl shadow-xl p-6">
+                <h2 className="text-2xl font-bold text-red-800 mb-4 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>Pending Withdrawals ({pendingWithdrawals.length})</span>
+                </h2>
+                <div className="space-y-3">
+                  {pendingWithdrawals.slice(0, 5).map((t) => {
+                    const user = users.find(u => u.id === t.userId);
+                    return (
+                      <div key={t.id} className="bg-white rounded-lg p-4 border-2 border-red-200 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-coffee-800">{user?.username || 'Unknown'}</p>
+                          <p className="text-sm text-coffee-600">
+                            Amount: <span className="font-bold text-red-600">RM {t.amount.toFixed(2)}</span>
+                            {t.amountAfterTax && (
+                              <span className="ml-2">
+                                (After tax: <span className="font-semibold">RM {t.amountAfterTax.toFixed(2)}</span>)
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-coffee-500">{new Date(t.createdAt).toLocaleString()}</p>
+                        </div>
+                        <button
+                          onClick={() => handleApproveWithdrawal(t.id)}
+                          className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition font-semibold"
+                        >
+                          ✅ Approve
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* All Transactions */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-coffee-200 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-coffee-800">All Transactions</h2>
+                <button
+                  onClick={() => {
+                    // Export CSV
+                    const csv = [
+                      ['Type', 'User', 'Amount', 'Status', 'Date'].join(','),
+                      ...transactions.map(t => {
+                        const user = users.find(u => u.id === t.userId);
+                        return [
+                          t.type,
+                          user?.username || 'Unknown',
+                          t.amount.toFixed(2),
+                          t.status,
+                          new Date(t.createdAt).toLocaleString()
+                        ].join(',');
+                      })
+                    ].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                  }}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition font-semibold"
+                >
+                  📥 Export CSV
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-coffee-50 to-coffee-100">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Type</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">User</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Amount</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Status</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Date</th>
+                      <th className="text-left p-4 font-semibold text-coffee-800">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {transactions.slice(0, 100).map((t) => {
+                      const user = users.find(u => u.id === t.userId);
+                      return (
+                        <tr key={t.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
+                          <td className="p-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              t.type === 'deposit' ? 'bg-blue-100 text-blue-700' :
+                              t.type === 'withdrawal' ? 'bg-red-100 text-red-700' :
+                              t.type === 'commission' ? 'bg-purple-100 text-purple-700' :
+                              t.type === 'daily_reward' ? 'bg-green-100 text-green-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {t.type.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="p-4 text-coffee-700">{user?.username || 'Unknown'}</td>
+                          <td className="p-4">
+                            <span className={`font-bold ${
+                              t.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
+                            }`}>
+                              {t.type === 'withdrawal' ? '-' : '+'}RM {t.amount.toFixed(2)}
+                            </span>
+                            {t.amountAfterTax && (
+                              <p className="text-xs text-coffee-500">After tax: RM {t.amountAfterTax.toFixed(2)}</p>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              t.status === 'completed' || t.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {t.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-coffee-600">{new Date(t.createdAt).toLocaleString()}</td>
+                          <td className="p-4">
+                            {t.type === 'withdrawal' && t.status === 'pending' && (
+                              <button
+                                onClick={() => handleApproveWithdrawal(t.id)}
+                                className="bg-green-500 text-white px-4 py-1 rounded text-sm hover:bg-green-600 transition"
+                              >
+                                Approve
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === 'daily' && (
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-coffee-800 mb-4">Daily VIP Returns</h2>
-            <p className="text-coffee-600 mb-4">Process daily VIP returns manually</p>
-            <button className="bg-coffee-600 text-white px-6 py-3 rounded-lg hover:bg-coffee-700">
-              Process Daily Returns
-            </button>
-          </div>
+          <DailyVIPManager />
         )}
 
         {activeTab === 'products' && (
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-coffee-800 mb-4">VIP Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-coffee-800">VIP Products Management</h2>
+              <p className="text-coffee-600">Manage VIP investment packages</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((product) => (
-                <div key={product.id} className="border border-coffee-200 rounded-lg p-4">
-                  <h3 className="font-bold text-coffee-800">{product.name}</h3>
-                  <p>Price: RM {product.price}</p>
-                  <p>Daily: RM {product.dailyIncome}</p>
-                  <p>Days: {product.validityDays}</p>
+                <div key={product.id} className="bg-gradient-to-br from-coffee-50 to-coffee-100 border-2 border-coffee-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition transform hover:scale-105">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-coffee-800">{product.name}</h3>
+                    <span className="text-4xl">☕</span>
+                  </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                      <span className="text-coffee-600 font-semibold">Price:</span>
+                      <span className="text-xl font-bold text-coffee-800">RM {product.price}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                      <span className="text-coffee-600 font-semibold">Daily Income:</span>
+                      <span className="text-lg font-bold text-green-600">RM {product.dailyIncome}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                      <span className="text-coffee-600 font-semibold">Validity:</span>
+                      <span className="text-lg font-bold text-coffee-800">{product.validityDays} days</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-2 border-green-200">
+                      <span className="text-green-700 font-semibold">Total Income:</span>
+                      <span className="text-xl font-bold text-green-700">RM {product.totalIncome}</span>
+                    </div>
+                  </div>
                   <button
                     onClick={() => {
                       setEditingProduct(product);
@@ -581,9 +926,9 @@ export default function AdminPage() {
                         validityDays: product.validityDays.toString(),
                       });
                     }}
-                    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600"
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-semibold shadow-lg"
                   >
-                    Edit
+                    ✏️ Edit Product
                   </button>
                 </div>
               ))}
@@ -1201,6 +1546,159 @@ function SupportSettingsManager() {
       >
         {saving ? 'Saving...' : '💾 Save Settings'}
       </button>
+    </div>
+  );
+}
+
+// Daily VIP Manager Component
+function DailyVIPManager() {
+  const [vipPurchases, setVipPurchases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchVIPPurchases();
+  }, []);
+
+  const fetchVIPPurchases = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/vip-purchases', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.purchases) {
+        setVipPurchases(data.purchases);
+      }
+    } catch (error) {
+      console.error('Failed to fetch VIP purchases');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProcessDaily = async () => {
+    if (!confirm('Process daily VIP returns for all active purchases?')) return;
+
+    setProcessing(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/process-daily', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'Daily returns processed successfully!');
+        fetchVIPPurchases();
+        // Refresh stats
+        window.location.reload();
+      } else {
+        alert(data.error || 'Failed to process daily returns');
+      }
+    } catch (error) {
+      alert('Connection error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const activePurchases = vipPurchases.filter(p => {
+    const expiresAt = new Date(p.expiresAt);
+    return expiresAt > new Date() && p.daysRemaining > 0;
+  });
+
+  const totalDailyReturns = activePurchases.reduce((sum, p) => sum + p.dailyReturn, 0);
+
+  if (loading) return <div className="text-center py-8">Loading...</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Process Button */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-2xl shadow-xl p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-green-800 mb-2">Daily VIP Returns Processing</h2>
+            <p className="text-green-700">
+              <strong>{activePurchases.length}</strong> active VIP purchases
+            </p>
+            <p className="text-green-600 mt-1">
+              Total daily returns: <strong>RM {totalDailyReturns.toFixed(2)}</strong>
+            </p>
+          </div>
+          <button
+            onClick={handleProcessDaily}
+            disabled={processing || activePurchases.length === 0}
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {processing ? '⏳ Processing...' : '✅ Process Daily Returns'}
+          </button>
+        </div>
+      </div>
+
+      {/* Active VIP Purchases */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-coffee-200">
+          <h3 className="text-xl font-bold text-coffee-800">Active VIP Purchases ({activePurchases.length})</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-coffee-50 to-coffee-100">
+              <tr>
+                <th className="text-left p-4 font-semibold text-coffee-800">User</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Product</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Amount</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Daily Return</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Days Remaining</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Expires</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activePurchases.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-coffee-500">
+                    No active VIP purchases
+                  </td>
+                </tr>
+              ) : (
+                activePurchases.map((purchase) => (
+                  <tr key={purchase.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
+                    <td className="p-4">
+                      <div>
+                        <p className="font-semibold text-coffee-800">{purchase.username}</p>
+                        <p className="text-xs text-coffee-500">{purchase.phone}</p>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                        {purchase.productId || 'VIP'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="font-bold text-coffee-800">RM {purchase.amount.toFixed(2)}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="font-bold text-green-600">RM {purchase.dailyReturn.toFixed(2)}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                        {purchase.daysRemaining} days
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-coffee-600">
+                      {new Date(purchase.expiresAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

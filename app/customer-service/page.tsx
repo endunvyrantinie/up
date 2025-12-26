@@ -1,10 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import BottomTabBar from '@/components/BottomTabBar';
-
-'use client';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import BottomTabBar from '@/components/BottomTabBar';

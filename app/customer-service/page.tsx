@@ -3,10 +3,38 @@
 import Link from 'next/link';
 import BottomTabBar from '@/components/BottomTabBar';
 
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import BottomTabBar from '@/components/BottomTabBar';
+
 export default function CustomerServicePage() {
-  const telegramSupport = process.env.NEXT_PUBLIC_TELEGRAM_SUPPORT_URL || process.env.NEXT_PUBLIC_TELEGRAM_ADMIN || 'https://t.me/coffeesupport';
-  const telegramChannel = process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL || process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL || 'https://t.me/coffeerewards';
-  const telegramGroup = process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || process.env.NEXT_PUBLIC_TELEGRAM_GROUP || 'https://t.me/coffeerewardsgroup';
+  const [telegramSupport, setTelegramSupport] = useState('https://t.me/coffeesupport');
+  const [telegramChannel, setTelegramChannel] = useState('https://t.me/coffeerewards');
+  const [telegramGroup, setTelegramGroup] = useState('https://t.me/coffeerewardsgroup');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.settings) {
+        setTelegramSupport(data.settings.telegramSupport || 'https://t.me/coffeesupport');
+        setTelegramChannel(data.settings.telegramChannel || 'https://t.me/coffeerewards');
+        setTelegramGroup(data.settings.telegramGroup || 'https://t.me/coffeerewardsgroup');
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings');
+      // Fallback to environment variables
+      setTelegramSupport(process.env.NEXT_PUBLIC_TELEGRAM_SUPPORT_URL || 'https://t.me/coffeesupport');
+      setTelegramChannel(process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL || 'https://t.me/coffeerewards');
+      setTelegramGroup(process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || 'https://t.me/coffeerewardsgroup');
+    }
+  };
 
   return (
     <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">

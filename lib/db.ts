@@ -14,6 +14,7 @@ const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
 const VIP_PURCHASES_FILE = path.join(DATA_DIR, 'vip_purchases.json');
 const BANK_ACCOUNTS_FILE = path.join(DATA_DIR, 'bank_accounts.json');
 const PAYMENT_CHANNELS_FILE = path.join(DATA_DIR, 'payment_channels.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -200,6 +201,38 @@ export const writePaymentChannels = (channels: PaymentChannel[]) => {
     fs.writeFileSync(PAYMENT_CHANNELS_FILE, JSON.stringify(channels, null, 2));
   } catch (error) {
     console.error('Error writing payment channels:', error);
+    throw error;
+  }
+};
+
+export interface Settings {
+  telegramSupport: string;
+  telegramChannel: string;
+  telegramGroup: string;
+}
+
+export const readSettings = (): Settings => {
+  try {
+    const data = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    // Return defaults if file doesn't exist
+    return {
+      telegramSupport: process.env.NEXT_PUBLIC_TELEGRAM_SUPPORT_URL || 'https://t.me/coffeesupport',
+      telegramChannel: process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL || 'https://t.me/coffeerewards',
+      telegramGroup: process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || 'https://t.me/coffeerewardsgroup',
+    };
+  }
+};
+
+export const writeSettings = (settings: Settings) => {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+  } catch (error) {
+    console.error('Error writing settings:', error);
     throw error;
   }
 };

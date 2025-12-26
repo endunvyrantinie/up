@@ -42,6 +42,10 @@ export default function AdminPage() {
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
   const [transactionStatusFilter, setTransactionStatusFilter] = useState<string>('all');
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   useEffect(() => {
     const adminToken = localStorage.getItem('adminToken');
@@ -250,6 +254,24 @@ export default function AdminPage() {
     }
   };
 
+  const fetchUserDetails = async (userId: string) => {
+    setLoadingUserDetails(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/user-details?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.user) {
+        setUserDetails(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user details');
+    } finally {
+      setLoadingUserDetails(false);
+    }
+  };
+
   const handleApproveWithdrawal = async (transactionId: string) => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -315,10 +337,20 @@ export default function AdminPage() {
   const filteredUsers = users.filter(user => {
     const matchesSearch = !searchQuery || 
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.referralCode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesVip = vipFilter === 'all' || user.vipLevel.toString() === vipFilter;
     return matchesSearch && matchesVip;
+  });
+
+  const filteredTransactions = transactions.filter(t => {
+    const matchesSearch = !transactionSearch || 
+      t.type.toLowerCase().includes(transactionSearch.toLowerCase()) ||
+      t.amount.toString().includes(transactionSearch) ||
+      users.find(u => u.id === t.userId)?.username.toLowerCase().includes(transactionSearch.toLowerCase());
+    const matchesType = transactionTypeFilter === 'all' || t.type === transactionTypeFilter;
+    const matchesStatus = transactionStatusFilter === 'all' || t.status === transactionStatusFilter;
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const usersPerPage = 10;
@@ -629,6 +661,38 @@ export default function AdminPage() {
 
         {activeTab === 'users' && (
           <div className="space-y-6">
+            {/* Users Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Users</h3>
+                  <span className="text-2xl">👥</span>
+                </div>
+                <p className="text-4xl font-bold">{users.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Active Users</h3>
+                  <span className="text-2xl">✅</span>
+                </div>
+                <p className="text-4xl font-bold">{users.filter(u => u.balance > 0 || u.vipLevel > 0).length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">VIP Users</h3>
+                  <span className="text-2xl">⭐</span>
+                </div>
+                <p className="text-4xl font-bold">{users.filter(u => u.vipLevel > 0).length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Referrals</h3>
+                  <span className="text-2xl">🔗</span>
+                </div>
+                <p className="text-4xl font-bold">{users.reduce((sum, u) => sum + (u.referralCount || 0), 0)}</p>
+              </div>
+            </div>
+
             {/* Search and Filter Bar */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -753,12 +817,26 @@ export default function AdminPage() {
                             <span className="text-green-600 font-semibold">RM {(user.totalEarned || 0).toFixed(2)}</span>
                           </td>
                           <td className="p-4">
-                            <button
-                              onClick={() => setSelectedUser(user)}
-                              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-600 hover:to-blue-700 transition font-semibold shadow-md"
-                            >
-                              ⚙️ Manage
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  fetchUserDetails(user.id);
+                                }}
+                                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:from-blue-600 hover:to-blue-700 transition font-semibold shadow-md"
+                              >
+                                ⚙️ Manage
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setViewingUser(user);
+                                  fetchUserDetails(user.id);
+                                }}
+                                className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg text-sm hover:from-green-600 hover:to-green-700 transition font-semibold shadow-md"
+                              >
+                                👁️ View
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -800,6 +878,42 @@ export default function AdminPage() {
 
         {activeTab === 'transactions' && (
           <div className="space-y-6">
+            {/* Transactions Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Transactions</h3>
+                  <span className="text-2xl">💳</span>
+                </div>
+                <p className="text-4xl font-bold">{transactions.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Deposits</h3>
+                  <span className="text-2xl">💰</span>
+                </div>
+                <p className="text-4xl font-bold">
+                  RM {transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0).toFixed(0)}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Pending Withdrawals</h3>
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <p className="text-4xl font-bold">{pendingWithdrawals.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold opacity-90">Total Commissions</h3>
+                  <span className="text-2xl">🎁</span>
+                </div>
+                <p className="text-4xl font-bold">
+                  RM {transactions.filter(t => t.type === 'commission').reduce((sum, t) => sum + t.amount, 0).toFixed(0)}
+                </p>
+              </div>
+            </div>
+
             {/* Pending Withdrawals Section */}
             {pendingWithdrawals.length > 0 && (
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-2xl shadow-xl p-6">
@@ -807,29 +921,38 @@ export default function AdminPage() {
                   <span>⚠️</span>
                   <span>Pending Withdrawals ({pendingWithdrawals.length})</span>
                 </h2>
-                <div className="space-y-3">
-                  {pendingWithdrawals.slice(0, 5).map((t) => {
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pendingWithdrawals.map((t) => {
                     const user = users.find(u => u.id === t.userId);
                     return (
-                      <div key={t.id} className="bg-white rounded-lg p-4 border-2 border-red-200 flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-coffee-800">{user?.username || 'Unknown'}</p>
-                          <p className="text-sm text-coffee-600">
-                            Amount: <span className="font-bold text-red-600">RM {t.amount.toFixed(2)}</span>
-                            {t.amountAfterTax && (
-                              <span className="ml-2">
-                                (After tax: <span className="font-semibold">RM {t.amountAfterTax.toFixed(2)}</span>)
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-coffee-500">{new Date(t.createdAt).toLocaleString()}</p>
+                      <div key={t.id} className="bg-white rounded-xl p-4 border-2 border-red-200 shadow-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-bold text-coffee-800 text-lg">{user?.username || 'Unknown'}</p>
+                            <p className="text-xs text-coffee-500">{new Date(t.createdAt).toLocaleString()}</p>
+                          </div>
+                          <button
+                            onClick={() => handleApproveWithdrawal(t.id)}
+                            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition font-semibold shadow-md"
+                          >
+                            ✅ Approve
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleApproveWithdrawal(t.id)}
-                          className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition font-semibold"
-                        >
-                          ✅ Approve
-                        </button>
+                        <div className="space-y-1">
+                          <p className="text-sm text-coffee-600">
+                            Amount: <span className="font-bold text-red-600 text-lg">RM {t.amount.toFixed(2)}</span>
+                          </p>
+                          {t.amountAfterTax && (
+                            <p className="text-sm text-coffee-600">
+                              After tax: <span className="font-semibold text-green-600">RM {t.amountAfterTax.toFixed(2)}</span>
+                            </p>
+                          )}
+                          {t.tax && (
+                            <p className="text-xs text-coffee-500">
+                              Tax (16%): RM {t.tax.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -837,23 +960,55 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* All Transactions */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="p-6 border-b border-coffee-200 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-coffee-800">All Transactions</h2>
+            {/* Filters and Search */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    placeholder="🔍 Search by user, type, or amount..."
+                    value={transactionSearch}
+                    onChange={(e) => setTransactionSearch(e.target.value)}
+                    className="w-full px-4 py-3 pl-10 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                  />
+                  <span className="absolute left-3 top-3.5 text-coffee-400">🔍</span>
+                </div>
+                <select
+                  value={transactionTypeFilter}
+                  onChange={(e) => setTransactionTypeFilter(e.target.value)}
+                  className="px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white"
+                >
+                  <option value="all">All Types</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="withdrawal">Withdrawal</option>
+                  <option value="commission">Commission</option>
+                  <option value="daily_reward">Daily Reward</option>
+                  <option value="vip_return">VIP Return</option>
+                </select>
+                <select
+                  value={transactionStatusFilter}
+                  onChange={(e) => setTransactionStatusFilter(e.target.value)}
+                  className="px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="approved">Approved</option>
+                  <option value="failed">Failed</option>
+                </select>
                 <button
                   onClick={() => {
-                    // Export CSV
                     const csv = [
-                      ['Type', 'User', 'Amount', 'Status', 'Date'].join(','),
-                      ...transactions.map(t => {
+                      ['Type', 'User', 'Amount', 'Status', 'Date', 'Description'].join(','),
+                      ...filteredTransactions.map(t => {
                         const user = users.find(u => u.id === t.userId);
                         return [
                           t.type,
                           user?.username || 'Unknown',
                           t.amount.toFixed(2),
                           t.status,
-                          new Date(t.createdAt).toLocaleString()
+                          new Date(t.createdAt).toLocaleString(),
+                          t.description || ''
                         ].join(',');
                       })
                     ].join('\n');
@@ -864,10 +1019,19 @@ export default function AdminPage() {
                     a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
                     a.click();
                   }}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition font-semibold"
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition font-semibold shadow-lg"
                 >
                   📥 Export CSV
                 </button>
+              </div>
+            </div>
+
+            {/* All Transactions */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-coffee-200">
+                <h2 className="text-2xl font-bold text-coffee-800">
+                  All Transactions ({filteredTransactions.length})
+                </h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -882,55 +1046,90 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.slice(0, 100).map((t) => {
-                      const user = users.find(u => u.id === t.userId);
-                      return (
-                        <tr key={t.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
-                          <td className="p-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              t.type === 'deposit' ? 'bg-blue-100 text-blue-700' :
-                              t.type === 'withdrawal' ? 'bg-red-100 text-red-700' :
-                              t.type === 'commission' ? 'bg-purple-100 text-purple-700' :
-                              t.type === 'daily_reward' ? 'bg-green-100 text-green-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {t.type.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="p-4 text-coffee-700">{user?.username || 'Unknown'}</td>
-                          <td className="p-4">
-                            <span className={`font-bold ${
-                              t.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
-                            }`}>
-                              {t.type === 'withdrawal' ? '-' : '+'}RM {t.amount.toFixed(2)}
-                            </span>
-                            {t.amountAfterTax && (
-                              <p className="text-xs text-coffee-500">After tax: RM {t.amountAfterTax.toFixed(2)}</p>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              t.status === 'completed' || t.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {t.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm text-coffee-600">{new Date(t.createdAt).toLocaleString()}</td>
-                          <td className="p-4">
-                            {t.type === 'withdrawal' && t.status === 'pending' && (
-                              <button
-                                onClick={() => handleApproveWithdrawal(t.id)}
-                                className="bg-green-500 text-white px-4 py-1 rounded text-sm hover:bg-green-600 transition"
-                              >
-                                Approve
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {filteredTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-coffee-500">
+                          No transactions found
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTransactions.slice(0, 100).map((t) => {
+                        const user = users.find(u => u.id === t.userId);
+                        return (
+                          <tr 
+                            key={t.id} 
+                            className="border-b border-coffee-100 hover:bg-coffee-50 transition cursor-pointer"
+                            onClick={() => setSelectedTransaction(t)}
+                          >
+                            <td className="p-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                t.type === 'deposit' ? 'bg-blue-100 text-blue-700' :
+                                t.type === 'withdrawal' ? 'bg-red-100 text-red-700' :
+                                t.type === 'commission' ? 'bg-purple-100 text-purple-700' :
+                                t.type === 'daily_reward' ? 'bg-green-100 text-green-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {t.type.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div>
+                                <p className="font-semibold text-coffee-800">{user?.username || 'Unknown'}</p>
+                                {user?.email && (
+                                  <p className="text-xs text-coffee-500">{user.email.replace('@coffee.com', '')}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div>
+                                <span className={`font-bold text-lg ${
+                                  t.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {t.type === 'withdrawal' ? '-' : '+'}RM {t.amount.toFixed(2)}
+                                </span>
+                                {t.amountAfterTax && (
+                                  <p className="text-xs text-coffee-500">After tax: RM {t.amountAfterTax.toFixed(2)}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                t.status === 'completed' || t.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {t.status}
+                              </span>
+                            </td>
+                            <td className="p-4 text-sm text-coffee-600">{new Date(t.createdAt).toLocaleString()}</td>
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                {t.type === 'withdrawal' && t.status === 'pending' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApproveWithdrawal(t.id);
+                                    }}
+                                    className="bg-green-500 text-white px-4 py-1 rounded text-sm hover:bg-green-600 transition font-semibold"
+                                  >
+                                    ✅ Approve
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTransaction(t);
+                                  }}
+                                  className="bg-blue-500 text-white px-4 py-1 rounded text-sm hover:bg-blue-600 transition font-semibold"
+                                >
+                                  👁️ View
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1082,6 +1281,216 @@ export default function AdminPage() {
                     Cancel
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Details Modal */}
+        {viewingUser && userDetails && !loadingUserDetails && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn overflow-y-auto">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slideUp my-8">
+              <div className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white p-6 rounded-t-3xl sticky top-0 z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold">User Details: {viewingUser.username}</h3>
+                    <p className="text-white/90 text-sm mt-1">Complete user information and activity</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setViewingUser(null);
+                      setUserDetails(null);
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition font-semibold"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* User Info Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                    <p className="text-sm text-blue-600 font-semibold mb-1">Balance</p>
+                    <p className="text-2xl font-bold text-blue-800">RM {userDetails.user.balance.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
+                    <p className="text-sm text-purple-600 font-semibold mb-1">VIP Level</p>
+                    <p className="text-2xl font-bold text-purple-800">VIP {userDetails.user.vipLevel}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
+                    <p className="text-sm text-green-600 font-semibold mb-1">Referrals</p>
+                    <p className="text-2xl font-bold text-green-800">{userDetails.stats.referralCount}</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
+                    <p className="text-sm text-orange-600 font-semibold mb-1">Commissions</p>
+                    <p className="text-2xl font-bold text-orange-800">RM {userDetails.stats.totalCommissions.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                {/* User Basic Info */}
+                <div className="bg-white border-2 border-coffee-200 rounded-xl p-6">
+                  <h4 className="text-lg font-bold text-coffee-800 mb-4">Basic Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Username</p>
+                      <p className="font-bold text-coffee-800">{userDetails.user.username}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Phone</p>
+                      <p className="font-bold text-coffee-800">{userDetails.user.phone || userDetails.user.email?.replace('@coffee.com', '') || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Referral Code</p>
+                      <p className="font-bold text-coffee-800 font-mono">{userDetails.user.referralCode}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Total Earned</p>
+                      <p className="font-bold text-green-600">RM {userDetails.user.totalEarned.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Total Withdrawn</p>
+                      <p className="font-bold text-red-600">RM {userDetails.user.totalWithdrawn.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-coffee-600 font-semibold mb-1">Total Invested</p>
+                      <p className="font-bold text-purple-600">RM {(userDetails.user.totalInvested || 0).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referral Tree */}
+                {userDetails.referralTree && userDetails.referralTree.level1.length > 0 && (
+                  <div className="bg-white border-2 border-coffee-200 rounded-xl p-6">
+                    <h4 className="text-lg font-bold text-coffee-800 mb-4">Referral Tree (Level 1) - {userDetails.referralTree.total} referrals</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {userDetails.referralTree.level1.map((ref: any) => (
+                        <div key={ref.id} className="bg-coffee-50 rounded-lg p-3 border border-coffee-200">
+                          <p className="font-semibold text-coffee-800">{ref.username}</p>
+                          <p className="text-xs text-coffee-600">{ref.phone}</p>
+                          <p className="text-sm text-purple-600 mt-1">Commission: RM {ref.commission.toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Transactions */}
+                {userDetails.transactions && userDetails.transactions.length > 0 && (
+                  <div className="bg-white border-2 border-coffee-200 rounded-xl p-6">
+                    <h4 className="text-lg font-bold text-coffee-800 mb-4">Recent Transactions ({userDetails.transactions.length})</h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {userDetails.transactions.map((t: Transaction) => (
+                        <div key={t.id} className="bg-coffee-50 rounded-lg p-3 border border-coffee-200 flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-coffee-800">{t.type.replace('_', ' ')}</p>
+                            <p className="text-xs text-coffee-600">{new Date(t.createdAt).toLocaleString()}</p>
+                            {t.description && (
+                              <p className="text-xs text-coffee-500 mt-1">{t.description}</p>
+                            )}
+                          </div>
+                          <span className={`font-bold text-lg ${
+                            t.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            {t.type === 'withdrawal' ? '-' : '+'}RM {t.amount.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction Details Modal */}
+        {selectedTransaction && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 animate-slideUp max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white p-4 rounded-2xl mb-6 -m-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">Transaction Details</h3>
+                  <button
+                    onClick={() => setSelectedTransaction(null)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {(() => {
+                  const user = users.find(u => u.id === selectedTransaction.userId);
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                          <p className="text-sm text-blue-600 font-semibold mb-1">Type</p>
+                          <p className="font-bold text-blue-800 text-lg">{selectedTransaction.type.replace('_', ' ')}</p>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                          <p className="text-sm text-purple-600 font-semibold mb-1">Status</p>
+                          <p className="font-bold text-purple-800 text-lg">{selectedTransaction.status}</p>
+                        </div>
+                        <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                          <p className="text-sm text-green-600 font-semibold mb-1">User</p>
+                          <p className="font-bold text-green-800">{user?.username || 'Unknown'}</p>
+                          {user?.email && (
+                            <p className="text-xs text-green-600 mt-1">{user.email.replace('@coffee.com', '')}</p>
+                          )}
+                        </div>
+                        <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                          <p className="text-sm text-orange-600 font-semibold mb-1">Amount</p>
+                          <p className={`font-bold text-lg ${
+                            selectedTransaction.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            {selectedTransaction.type === 'withdrawal' ? '-' : '+'}RM {selectedTransaction.amount.toFixed(2)}
+                          </p>
+                        </div>
+                        {selectedTransaction.amountAfterTax && (
+                          <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                            <p className="text-sm text-green-600 font-semibold mb-1">Amount After Tax</p>
+                            <p className="font-bold text-green-700 text-lg">RM {selectedTransaction.amountAfterTax.toFixed(2)}</p>
+                          </div>
+                        )}
+                        {selectedTransaction.tax && (
+                          <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                            <p className="text-sm text-red-600 font-semibold mb-1">Tax (16%)</p>
+                            <p className="font-bold text-red-700 text-lg">RM {selectedTransaction.tax.toFixed(2)}</p>
+                          </div>
+                        )}
+                        <div className="p-4 bg-coffee-50 rounded-lg border-2 border-coffee-200 col-span-2">
+                          <p className="text-sm text-coffee-600 font-semibold mb-1">Date & Time</p>
+                          <p className="font-bold text-coffee-800">{new Date(selectedTransaction.createdAt).toLocaleString()}</p>
+                        </div>
+                        {selectedTransaction.description && (
+                          <div className="p-4 bg-coffee-50 rounded-lg border-2 border-coffee-200 col-span-2">
+                            <p className="text-sm text-coffee-600 font-semibold mb-1">Description</p>
+                            <p className="font-bold text-coffee-800">{selectedTransaction.description}</p>
+                          </div>
+                        )}
+                        {selectedTransaction.approveDate && (
+                          <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200 col-span-2">
+                            <p className="text-sm text-green-600 font-semibold mb-1">Approved Date</p>
+                            <p className="font-bold text-green-800">{new Date(selectedTransaction.approveDate).toLocaleString()}</p>
+                          </div>
+                        )}
+                      </div>
+                      {selectedTransaction.type === 'withdrawal' && selectedTransaction.status === 'pending' && (
+                        <button
+                          onClick={() => {
+                            handleApproveWithdrawal(selectedTransaction.id);
+                            setSelectedTransaction(null);
+                          }}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition font-semibold shadow-lg"
+                        >
+                          ✅ Approve Withdrawal
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>

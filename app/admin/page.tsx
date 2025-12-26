@@ -409,12 +409,23 @@ export default function AdminPage() {
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar Navigation */}
         <div className="hidden lg:flex flex-col w-64 bg-gradient-to-b from-coffee-800 to-coffee-900 text-white shadow-2xl">
-          <div className="p-6 border-b border-coffee-700">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <span className="text-3xl">☕</span>
-              <span>Admin Panel</span>
-            </h1>
-            <p className="text-coffee-300 text-sm mt-1">Coffee Rewards System</p>
+          <div 
+            className="p-6 border-b border-coffee-700 cursor-pointer hover:bg-coffee-700 transition group"
+            onClick={() => {
+              setActiveTab('dashboard');
+              fetchData();
+            }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-coffee-400 to-coffee-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <span className="text-2xl">☕</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold group-hover:text-coffee-200 transition">Admin Panel</h1>
+                <p className="text-coffee-300 text-xs">Coffee Rewards</p>
+              </div>
+            </div>
+            <p className="text-coffee-300 text-xs mt-2 opacity-75 group-hover:opacity-100 transition">Click to refresh dashboard</p>
           </div>
           
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -457,10 +468,21 @@ export default function AdminPage() {
           {/* Top Header (Mobile) */}
           <div className="lg:hidden bg-white shadow-lg border-b border-coffee-200 p-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-coffee-800 flex items-center gap-2">
-                <span>☕</span>
-                <span>Admin Panel</span>
-              </h1>
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition"
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  fetchData();
+                }}
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-coffee-500 to-coffee-700 rounded-lg flex items-center justify-center shadow-md">
+                  <span className="text-xl">☕</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-coffee-800">Admin Panel</h1>
+                  <p className="text-xs text-coffee-500">Coffee Rewards</p>
+                </div>
+              </div>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm"
@@ -2239,9 +2261,14 @@ function DailyVIPManager() {
   const [vipPurchases, setVipPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [lastProcessed, setLastProcessed] = useState<string | null>(null);
+  const [processHistory, setProcessHistory] = useState<any[]>([]);
 
   useEffect(() => {
     fetchVIPPurchases();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchVIPPurchases, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchVIPPurchases = async () => {
@@ -2262,7 +2289,7 @@ function DailyVIPManager() {
   };
 
   const handleProcessDaily = async () => {
-    if (!confirm('Process daily VIP returns for all active purchases?')) return;
+    if (!confirm(`Process daily VIP returns for ${activePurchases.length} active purchases?\nTotal amount: RM ${totalDailyReturns.toFixed(2)}`)) return;
 
     setProcessing(true);
     try {
@@ -2277,10 +2304,16 @@ function DailyVIPManager() {
 
       const data = await res.json();
       if (data.success) {
-        alert(data.message || 'Daily returns processed successfully!');
+        setLastProcessed(new Date().toLocaleString());
+        setProcessHistory(prev => [{
+          date: new Date().toLocaleString(),
+          processed: data.processedCount,
+          amount: data.totalAmount,
+        }, ...prev].slice(0, 10));
+        alert(`✅ Success!\n\nProcessed: ${data.processedCount} purchases\nTotal: RM ${data.totalAmount.toFixed(2)}`);
         fetchVIPPurchases();
         // Refresh stats
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1000);
       } else {
         alert(data.error || 'Failed to process daily returns');
       }
@@ -2296,38 +2329,140 @@ function DailyVIPManager() {
     return expiresAt > new Date() && p.daysRemaining > 0;
   });
 
-  const totalDailyReturns = activePurchases.reduce((sum, p) => sum + p.dailyReturn, 0);
+  const expiredPurchases = vipPurchases.filter(p => {
+    const expiresAt = new Date(p.expiresAt);
+    return expiresAt <= new Date() || p.daysRemaining <= 0;
+  });
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  const totalDailyReturns = activePurchases.reduce((sum, p) => sum + p.dailyReturn, 0);
+  const totalInvested = activePurchases.reduce((sum, p) => sum + p.amount, 0);
+  const totalRemainingDays = activePurchases.reduce((sum, p) => sum + p.daysRemaining, 0);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-coffee-600"></div>
+        <p className="text-coffee-600 mt-4 font-semibold">Loading VIP purchases...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Process Button */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-2xl shadow-xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-green-800 mb-2">Daily VIP Returns Processing</h2>
-            <p className="text-green-700">
-              <strong>{activePurchases.length}</strong> active VIP purchases
-            </p>
-            <p className="text-green-600 mt-1">
-              Total daily returns: <strong>RM {totalDailyReturns.toFixed(2)}</strong>
-            </p>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold opacity-90">Active Purchases</h3>
+            <span className="text-2xl">📦</span>
+          </div>
+          <p className="text-4xl font-bold">{activePurchases.length}</p>
+          <p className="text-xs opacity-75 mt-1">Currently active</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold opacity-90">Total Invested</h3>
+            <span className="text-2xl">💰</span>
+          </div>
+          <p className="text-4xl font-bold">RM {totalInvested.toFixed(0)}</p>
+          <p className="text-xs opacity-75 mt-1">In active purchases</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold opacity-90">Daily Returns</h3>
+            <span className="text-2xl">📈</span>
+          </div>
+          <p className="text-4xl font-bold">RM {totalDailyReturns.toFixed(2)}</p>
+          <p className="text-xs opacity-75 mt-1">Per day</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold opacity-90">Total Days</h3>
+            <span className="text-2xl">📅</span>
+          </div>
+          <p className="text-4xl font-bold">{totalRemainingDays}</p>
+          <p className="text-xs opacity-75 mt-1">Days remaining</p>
+        </div>
+      </div>
+
+      {/* Process Section */}
+      <div className="bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-l-4 border-green-500 rounded-2xl shadow-xl p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-green-800 mb-3 flex items-center gap-2">
+              <span>⚡</span>
+              <span>Daily VIP Returns Processing</span>
+            </h2>
+            <div className="space-y-2">
+              <p className="text-green-700 font-semibold">
+                <span className="text-2xl">{activePurchases.length}</span> active VIP purchases ready for processing
+              </p>
+              <p className="text-green-600">
+                Total daily returns: <span className="font-bold text-lg">RM {totalDailyReturns.toFixed(2)}</span>
+              </p>
+              {lastProcessed && (
+                <p className="text-xs text-green-500">
+                  Last processed: {lastProcessed}
+                </p>
+              )}
+            </div>
           </div>
           <button
             onClick={handleProcessDaily}
             disabled={processing || activePurchases.length === 0}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 flex items-center gap-3"
           >
-            {processing ? '⏳ Processing...' : '✅ Process Daily Returns'}
+            {processing ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-2xl">✅</span>
+                <span>Process Daily Returns</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
+      {/* Process History */}
+      {processHistory.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-500">
+          <h3 className="text-lg font-bold text-coffee-800 mb-4">📊 Processing History</h3>
+          <div className="space-y-2">
+            {processHistory.map((item, index) => (
+              <div key={index} className="bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-blue-800">{item.date}</p>
+                  <p className="text-xs text-blue-600">Processed {item.processed} purchases</p>
+                </div>
+                <span className="font-bold text-green-600">RM {item.amount.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Active VIP Purchases */}
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-6 border-b border-coffee-200">
-          <h3 className="text-xl font-bold text-coffee-800">Active VIP Purchases ({activePurchases.length})</h3>
+        <div className="p-6 border-b border-coffee-200 bg-gradient-to-r from-coffee-50 to-coffee-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-coffee-800">Active VIP Purchases</h3>
+              <p className="text-sm text-coffee-600 mt-1">{activePurchases.length} active purchases</p>
+            </div>
+            <button
+              onClick={fetchVIPPurchases}
+              className="bg-coffee-500 text-white px-4 py-2 rounded-lg hover:bg-coffee-600 transition font-semibold text-sm"
+            >
+              🔄 Refresh
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -2335,54 +2470,102 @@ function DailyVIPManager() {
               <tr>
                 <th className="text-left p-4 font-semibold text-coffee-800">User</th>
                 <th className="text-left p-4 font-semibold text-coffee-800">Product</th>
-                <th className="text-left p-4 font-semibold text-coffee-800">Amount</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Investment</th>
                 <th className="text-left p-4 font-semibold text-coffee-800">Daily Return</th>
-                <th className="text-left p-4 font-semibold text-coffee-800">Days Remaining</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Days Left</th>
                 <th className="text-left p-4 font-semibold text-coffee-800">Expires</th>
+                <th className="text-left p-4 font-semibold text-coffee-800">Total Return</th>
               </tr>
             </thead>
             <tbody>
               {activePurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-coffee-500">
-                    No active VIP purchases
+                  <td colSpan={7} className="p-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="text-6xl">📭</span>
+                      <p className="text-coffee-500 font-semibold text-lg">No active VIP purchases</p>
+                      <p className="text-coffee-400 text-sm">VIP purchases will appear here when users invest</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                activePurchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
-                    <td className="p-4">
-                      <div>
-                        <p className="font-semibold text-coffee-800">{purchase.username}</p>
-                        <p className="text-xs text-coffee-500">{purchase.phone}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                        {purchase.productId || 'VIP'}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-bold text-coffee-800">RM {purchase.amount.toFixed(2)}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-bold text-green-600">RM {purchase.dailyReturn.toFixed(2)}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                        {purchase.daysRemaining} days
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm text-coffee-600">
-                      {new Date(purchase.expiresAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
+                activePurchases.map((purchase) => {
+                  const totalReturn = purchase.dailyReturn * purchase.daysRemaining;
+                  return (
+                    <tr key={purchase.id} className="border-b border-coffee-100 hover:bg-coffee-50 transition">
+                      <td className="p-4">
+                        <div>
+                          <p className="font-semibold text-coffee-800">{purchase.username}</p>
+                          <p className="text-xs text-coffee-500">{purchase.phone}</p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                          {purchase.productId || 'VIP'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-bold text-coffee-800">RM {purchase.amount.toFixed(2)}</span>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-bold text-green-600">RM {purchase.dailyReturn.toFixed(2)}</span>
+                        <p className="text-xs text-coffee-500">per day</p>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                            {purchase.daysRemaining}
+                          </span>
+                          <span className="text-xs text-coffee-500">days</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <p className="text-sm text-coffee-600 font-semibold">{new Date(purchase.expiresAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-coffee-500">{new Date(purchase.expiresAt).toLocaleTimeString()}</p>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-bold text-green-700">RM {totalReturn.toFixed(2)}</span>
+                        <p className="text-xs text-coffee-500">remaining</p>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Expired Purchases */}
+      {expiredPurchases.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-l-4 border-gray-400">
+          <div className="p-6 border-b border-coffee-200 bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 className="text-lg font-bold text-gray-700">Expired VIP Purchases ({expiredPurchases.length})</h3>
+          </div>
+          <div className="overflow-x-auto max-h-64">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left p-3 text-xs font-semibold text-gray-600">User</th>
+                  <th className="text-left p-3 text-xs font-semibold text-gray-600">Product</th>
+                  <th className="text-left p-3 text-xs font-semibold text-gray-600">Amount</th>
+                  <th className="text-left p-3 text-xs font-semibold text-gray-600">Expired</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expiredPurchases.slice(0, 10).map((purchase) => (
+                  <tr key={purchase.id} className="border-b border-gray-100">
+                    <td className="p-3 text-sm text-gray-600">{purchase.username}</td>
+                    <td className="p-3 text-sm text-gray-600">{purchase.productId || 'VIP'}</td>
+                    <td className="p-3 text-sm text-gray-600">RM {purchase.amount.toFixed(2)}</td>
+                    <td className="p-3 text-xs text-gray-500">{new Date(purchase.expiresAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

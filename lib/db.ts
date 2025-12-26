@@ -12,6 +12,8 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const REFERRALS_FILE = path.join(DATA_DIR, 'referrals.json');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
 const VIP_PURCHASES_FILE = path.join(DATA_DIR, 'vip_purchases.json');
+const BANK_ACCOUNTS_FILE = path.join(DATA_DIR, 'bank_accounts.json');
+const PAYMENT_CHANNELS_FILE = path.join(DATA_DIR, 'payment_channels.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -33,6 +35,20 @@ initFile(USERS_FILE, []);
 initFile(REFERRALS_FILE, []);
 initFile(TRANSACTIONS_FILE, []);
 initFile(VIP_PURCHASES_FILE, []);
+initFile(BANK_ACCOUNTS_FILE, [
+  { id: '1', name: 'Bank Account 1', bank: 'Maybank', account: '1234567890', accountHolder: 'Coffee Rewards Sdn Bhd', swift: '', isActive: true },
+  { id: '2', name: 'Bank Account 2', bank: 'CIMB', account: '0987654321', accountHolder: 'Coffee Rewards Sdn Bhd', swift: '', isActive: true },
+]);
+initFile(PAYMENT_CHANNELS_FILE, [
+  { id: '1', name: 'Payment Channel 1', type: 'bank', details: 'Secure & Fast', instructions: '', isActive: true },
+]);
+initFile(BANK_ACCOUNTS_FILE, [
+  { id: '1', name: 'Bank Account 1', bank: 'Maybank', account: '1234567890', accountHolder: 'Coffee Rewards Sdn Bhd', swift: '', isActive: true },
+  { id: '2', name: 'Bank Account 2', bank: 'CIMB', account: '0987654321', accountHolder: 'Coffee Rewards Sdn Bhd', swift: '', isActive: true },
+]);
+initFile(PAYMENT_CHANNELS_FILE, [
+  { id: '1', name: 'Payment Channel 1', type: 'bank', details: 'Secure & Fast', instructions: '', isActive: true },
+]);
 
 export interface User {
   id: string;
@@ -127,6 +143,67 @@ export const readVIPPurchases = (): VIPPurchase[] => {
   }
 };
 
+export interface BankAccount {
+  id: string;
+  name: string;
+  bank: string;
+  account: string;
+  accountHolder: string;
+  swift?: string;
+  isActive: boolean;
+}
+
+export interface PaymentChannel {
+  id: string;
+  name: string;
+  type: string; // 'bank', 'ewallet', 'crypto', etc.
+  details: string;
+  instructions?: string;
+  isActive: boolean;
+}
+
+export const readBankAccounts = (): BankAccount[] => {
+  try {
+    const data = fs.readFileSync(BANK_ACCOUNTS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+};
+
+export const writeBankAccounts = (accounts: BankAccount[]) => {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(BANK_ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
+  } catch (error) {
+    console.error('Error writing bank accounts:', error);
+    throw error;
+  }
+};
+
+export const readPaymentChannels = (): PaymentChannel[] => {
+  try {
+    const data = fs.readFileSync(PAYMENT_CHANNELS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+};
+
+export const writePaymentChannels = (channels: PaymentChannel[]) => {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(PAYMENT_CHANNELS_FILE, JSON.stringify(channels, null, 2));
+  } catch (error) {
+    console.error('Error writing payment channels:', error);
+    throw error;
+  }
+};
+
 // Write functions
 export const writeUsers = (users: User[]) => {
   try {
@@ -185,7 +262,19 @@ export const findUserByEmail = (email: string): User | undefined => {
 
 export const findUserByPhone = (phone: string): User | undefined => {
   const users = readUsers();
-  return users.find(u => u.phone === phone || u.username === phone);
+  // Normalize phone for comparison
+  const normalizedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
+  
+  return users.find(u => {
+    const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
+    const userUsername = (u.username || '').replace(/\s+/g, '').replace(/-/g, '');
+    return userPhone === normalizedPhone || 
+           userPhone === phone || 
+           userUsername === normalizedPhone || 
+           userUsername === phone ||
+           u.phone === phone ||
+           u.username === phone;
+  });
 };
 
 export const findUserByReferralCode = (code: string): User | undefined => {

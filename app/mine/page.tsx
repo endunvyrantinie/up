@@ -60,7 +60,7 @@ export default function MinePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       {/* Enhanced Top Card - Mobile Optimized */}
       <div className="bg-gradient-to-br from-coffee-brown via-coffee-600 to-coffee-700 text-white p-6 sm:p-8 mb-4 sm:mb-6 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 rounded-full -translate-y-24 translate-x-24 sm:-translate-y-32 sm:translate-x-32"></div>

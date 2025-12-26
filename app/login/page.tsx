@@ -20,6 +20,9 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
+      // Normalize phone number (remove spaces, dashes, etc.)
+      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '');
+      
       // Clear any existing tokens before login attempt
       localStorage.removeItem('token');
       localStorage.removeItem('adminToken');
@@ -27,12 +30,17 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          password: formData.password,
+        }),
       });
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Server error' }));
-        setError(errorData.error || 'Login failed');
+        const errorMessage = errorData.error || 'Login failed';
+        console.error('Login API error:', errorMessage);
+        setError(errorMessage);
         setLoading(false);
         return;
       }
@@ -60,7 +68,9 @@ export default function LoginPage() {
         // Don't set loading to false here as we're redirecting
         return;
       } else {
-        setError(data.error || 'Login failed');
+        const errorMessage = data.error || 'Login failed';
+        console.error('Login failed:', errorMessage);
+        setError(errorMessage);
         setLoading(false);
       }
     } catch (error) {
@@ -71,12 +81,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 flex items-center justify-center p-4 relative overflow-hidden swipeable">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-coffee-200/30 rounded-full -translate-x-48 -translate-y-48"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-coffee-300/30 rounded-full translate-x-48 translate-y-48"></div>
       
-      <div className="max-w-md w-full bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border-2 border-coffee-100 relative z-10">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border-2 border-coffee-100 relative z-10 mobile-card">
         <div className="text-center mb-6 sm:mb-8">
           <div className="text-5xl sm:text-6xl mb-3 sm:mb-4 animate-pulse">☕</div>
           <h1 className="text-3xl sm:text-4xl font-bold text-coffee-800 mb-2">Coffee Rewards</h1>
@@ -130,7 +140,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 touch-target no-select"
           >
             {loading ? (
               <>

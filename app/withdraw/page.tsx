@@ -24,9 +24,8 @@ export default function WithdrawPage() {
   const [selectedAccount, setSelectedAccount] = useState('Bank Account 1');
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [error, setError] = useState('');
-  const [accounts] = useState([
+  const [accounts, setAccounts] = useState([
     { id: '1', name: 'Bank Account 1', bank: 'Maybank', account: '1234567890' },
-    { id: '2', name: 'Bank Account 2', bank: 'CIMB', account: '0987654321' },
   ]);
 
   useEffect(() => {
@@ -38,7 +37,23 @@ export default function WithdrawPage() {
 
     fetchUser();
     fetchWithdrawals();
+    fetchBankAccounts();
   }, []);
+
+  const fetchBankAccounts = async () => {
+    try {
+      const res = await fetch('/api/bank-accounts');
+      const data = await res.json();
+      if (data.accounts && data.accounts.length > 0) {
+        setAccounts(data.accounts);
+        if (!selectedAccount && data.accounts[0]) {
+          setSelectedAccount(data.accounts[0].name);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch bank accounts');
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -138,7 +153,7 @@ export default function WithdrawPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       <div className="bg-coffee-800 text-white p-4">
         <div className="container mx-auto flex justify-between items-center">
           <button onClick={() => router.push('/dashboard')} className="text-sm hover:underline">

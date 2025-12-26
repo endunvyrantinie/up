@@ -34,18 +34,35 @@ export async function POST(request: NextRequest) {
 
     // User login - try phone first, then email for backward compatibility
     try {
-      let user = findUserByPhone(loginIdentifier);
+      // Normalize phone number (remove spaces, dashes, etc.)
+      const normalizedPhone = loginIdentifier.replace(/\s+/g, '').replace(/-/g, '');
+      
+      let user = findUserByPhone(normalizedPhone);
+      if (!user) {
+        // Try with original format
+        user = findUserByPhone(loginIdentifier);
+      }
+      if (!user) {
+        // Try finding by partial phone match (in case of formatting differences)
+        const users = await import('@/lib/db').then(m => m.readUsers());
+        user = users.find(u => {
+          const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
+          return userPhone === normalizedPhone || userPhone === loginIdentifier || u.phone === loginIdentifier;
+        }) || undefined;
+      }
       if (!user) {
         // Fallback to email for existing users
         user = findUserByEmail(loginIdentifier);
       }
       
       if (!user) {
+        console.error('Login failed: User not found for identifier:', loginIdentifier);
         return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
       }
 
       const isValid = await comparePassword(password, user.password);
       if (!isValid) {
+        console.error('Login failed: Invalid password for user:', user.id);
         return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
       }
 

@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#8B4513',
   viewportFit: 'cover',
 }
@@ -27,8 +27,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="font-sans">{children}</body>
+    <html lang="en" className="no-pull-refresh">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Coffee Rewards" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
+      <body className="font-sans app-container smooth-scroll text-render-optimize">
+        {children}
+      </body>
     </html>
   )
 }

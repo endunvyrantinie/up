@@ -13,6 +13,8 @@ export default function RechargePage() {
   const [loading, setLoading] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [paymentChannels, setPaymentChannels] = useState<any[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
 
   const amountChips = [50, 100, 200, 400, 800, 1600, 3000, 6000, 12000];
 
@@ -87,7 +89,7 @@ export default function RechargePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       {/* Enhanced Header */}
       <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-xl">
         <div className="container mx-auto flex justify-between items-center">
@@ -110,7 +112,7 @@ export default function RechargePage() {
           <p className="text-4xl font-bold">RM {user.balance.toFixed(2)}</p>
         </div>
 
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 mb-6 border-2 border-coffee-100">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 mb-6 border-2 border-coffee-100 mobile-card">
           <h2 className="text-xl sm:text-2xl font-bold text-coffee-800 mb-2 flex items-center gap-2">
             <span>💳</span>
             <span>Recharge Amount</span>
@@ -126,7 +128,7 @@ export default function RechargePage() {
                   setSelectedAmount(chip);
                   setAmount(chip.toString());
                 }}
-                className={`py-3 sm:py-4 px-2 sm:px-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform active:scale-105 touch-manipulation min-h-[48px] text-xs sm:text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-4 rounded-lg sm:rounded-xl font-bold transition-all duration-300 transform active:scale-95 touch-manipulation touch-target text-xs sm:text-sm no-select ${
                   selectedAmount === chip
                     ? 'bg-gradient-to-r from-coffee-brown to-coffee-600 text-white shadow-lg scale-105'
                     : 'bg-coffee-50 text-coffee-800 active:bg-coffee-100 border-2 border-coffee-200'
@@ -165,21 +167,47 @@ export default function RechargePage() {
             <label className="block text-sm font-bold text-coffee-800 mb-3">
               🔄 Payment Channel
             </label>
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 hover:shadow-lg transition">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-coffee-800 block">Payment Channel 1</span>
-                  <span className="text-xs text-coffee-600">Secure & Fast</span>
-                </div>
-                <span className="text-2xl text-green-600">✓</span>
+            {paymentChannels.length > 0 ? (
+              <div className="space-y-2">
+                {paymentChannels.map((channel) => (
+                  <div
+                    key={channel.id}
+                    onClick={() => setSelectedChannel(channel)}
+                    className={`bg-gradient-to-r from-blue-50 to-blue-100 border-2 rounded-xl p-4 hover:shadow-lg transition cursor-pointer ${
+                      selectedChannel?.id === channel.id ? 'border-blue-500' : 'border-blue-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-coffee-800 block">{channel.name}</span>
+                        <span className="text-xs text-coffee-600">{channel.details}</span>
+                        {channel.instructions && (
+                          <span className="text-xs text-coffee-500 block mt-1">{channel.instructions}</span>
+                        )}
+                      </div>
+                      {selectedChannel?.id === channel.id && (
+                        <span className="text-2xl text-green-600">✓</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-coffee-800 block">No payment channels available</span>
+                    <span className="text-xs text-coffee-600">Please contact admin</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
             onClick={handleRecharge}
             disabled={loading || (!amount && !selectedAmount) || (amount ? parseFloat(amount) < 50 : false)}
-            className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-5 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-coffee-brown to-coffee-600 text-white py-5 rounded-xl font-bold text-lg hover:from-coffee-600 hover:to-coffee-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 touch-target no-select"
           >
             {loading ? (
               <>

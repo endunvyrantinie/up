@@ -92,7 +92,7 @@ export default function ProductPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       {/* Enhanced Top Card */}
       <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-2xl rounded-b-3xl mb-6">
         <div className="flex justify-between items-center">
@@ -111,7 +111,7 @@ export default function ProductPage() {
         {/* VIP Plans List - Enhanced */}
         <div className="space-y-6">
           {VIP_PLANS.map((plan) => (
-            <div key={plan.id} className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 border-2 border-coffee-200 active:shadow-3xl transition-all duration-300 transform active:scale-[1.02] touch-manipulation">
+            <div key={plan.id} className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 border-2 border-coffee-200 mobile-card touch-manipulation">
               <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
                 {/* Product Image - Mobile Optimized */}
                 <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-coffee-200 via-coffee-300 to-coffee-400 rounded-xl sm:rounded-2xl flex items-center justify-center text-4xl sm:text-6xl flex-shrink-0 shadow-lg mx-auto md:mx-0">
@@ -155,7 +155,7 @@ export default function ProductPage() {
                   <button
                     onClick={() => handlePurchase(plan.id)}
                     disabled={purchasing === plan.id || user.balance < plan.price}
-                    className="w-full md:w-auto bg-gradient-to-r from-coffee-brown to-coffee-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold active:from-coffee-600 active:to-coffee-700 transition-all duration-300 shadow-lg active:shadow-xl active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 min-h-[48px] touch-manipulation"
+                    className="w-full md:w-auto bg-gradient-to-r from-coffee-brown to-coffee-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold active:from-coffee-600 active:to-coffee-700 transition-all duration-300 shadow-lg active:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 touch-target no-select"
                   >
                     {purchasing === plan.id ? (
                       <>

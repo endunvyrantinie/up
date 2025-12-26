@@ -25,7 +25,7 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'transactions' | 'daily' | 'products'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'transactions' | 'daily' | 'products' | 'settings'>('dashboard');
   const [products, setProducts] = useState<any[]>([]);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [productForm, setProductForm] = useState({ price: '', dailyIncome: '', validityDays: '' });
@@ -480,7 +480,7 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-xl mb-6">
           <div className="flex border-b border-coffee-200 overflow-x-auto">
-            {(['dashboard', 'users', 'transactions', 'daily', 'products'] as const).map((tab) => (
+            {(['dashboard', 'users', 'transactions', 'daily', 'products', 'settings'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -490,7 +490,7 @@ export default function AdminPage() {
                     : 'text-coffee-400'
                 }`}
               >
-                {tab === 'dashboard' ? '📊 Dashboard' : tab === 'products' ? '📦 Products' : tab}
+                {tab === 'dashboard' ? '📊 Dashboard' : tab === 'products' ? '📦 Products' : tab === 'settings' ? '⚙️ Settings' : tab}
               </button>
             ))}
           </div>
@@ -1207,7 +1207,478 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            {/* Bank Accounts Management */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h2 className="text-2xl font-bold text-coffee-800 mb-4">🏦 Bank Accounts Management</h2>
+              <p className="text-coffee-600 mb-6">Manage bank accounts for withdrawal</p>
+              
+              <BankAccountsManager />
+            </div>
+
+            {/* Payment Channels Management */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h2 className="text-2xl font-bold text-coffee-800 mb-4">💳 Payment Channels Management</h2>
+              <p className="text-coffee-600 mb-6">Manage payment channels for recharge</p>
+              
+              <PaymentChannelsManager />
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Bank Accounts Manager Component
+function BankAccountsManager() {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    bank: '',
+    account: '',
+    accountHolder: '',
+    swift: '',
+    isActive: true,
+  });
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/bank-accounts', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.accounts) {
+        setAccounts(data.accounts);
+      }
+    } catch (error) {
+      console.error('Failed to fetch bank accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = () => {
+    setEditingAccount(null);
+    setFormData({ name: '', bank: '', account: '', accountHolder: '', swift: '', isActive: true });
+    setShowModal(true);
+  };
+
+  const handleEdit = (account: any) => {
+    setEditingAccount(account);
+    setFormData({
+      name: account.name,
+      bank: account.bank,
+      account: account.account,
+      accountHolder: account.accountHolder,
+      swift: account.swift || '',
+      isActive: account.isActive,
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const url = '/api/admin/bank-accounts';
+      const method = editingAccount ? 'PUT' : 'POST';
+      const body = editingAccount ? { ...formData, id: editingAccount.id } : formData;
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(editingAccount ? 'Bank account updated!' : 'Bank account created!');
+        setShowModal(false);
+        fetchAccounts();
+      } else {
+        alert(data.error || 'Failed to save');
+      }
+    } catch (error) {
+      alert('Connection error');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this bank account?')) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/bank-accounts?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Bank account deleted!');
+        fetchAccounts();
+      } else {
+        alert(data.error || 'Failed to delete');
+      }
+    } catch (error) {
+      alert('Connection error');
+    }
+  };
+
+  if (loading) return <div className="text-center py-4">Loading...</div>;
+
+  return (
+    <div>
+      <button
+        onClick={handleCreate}
+        className="mb-4 bg-coffee-600 text-white px-4 py-2 rounded-lg hover:bg-coffee-700 transition"
+      >
+        ➕ Add Bank Account
+      </button>
+
+      <div className="space-y-3">
+        {accounts.map((account) => (
+          <div key={account.id} className="border border-coffee-200 rounded-lg p-4 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-coffee-800">{account.name}</h3>
+              <p className="text-sm text-coffee-600">Bank: {account.bank}</p>
+              <p className="text-sm text-coffee-600">Account: {account.account}</p>
+              <p className="text-sm text-coffee-600">Holder: {account.accountHolder}</p>
+              <span className={`text-xs px-2 py-1 rounded ${account.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {account.isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => handleEdit(account)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
+                ✏️ Edit
+              </button>
+              <button onClick={() => handleDelete(account.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-coffee-800 mb-4">
+              {editingAccount ? 'Edit Bank Account' : 'Add Bank Account'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Bank Account 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Bank</label>
+                <input
+                  type="text"
+                  value={formData.bank}
+                  onChange={(e) => setFormData({ ...formData, bank: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Maybank"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Account Number</label>
+                <input
+                  type="text"
+                  value={formData.account}
+                  onChange={(e) => setFormData({ ...formData, account: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="1234567890"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Account Holder</label>
+                <input
+                  type="text"
+                  value={formData.accountHolder}
+                  onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Coffee Rewards Sdn Bhd"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">SWIFT Code (Optional)</label>
+                <input
+                  type="text"
+                  value={formData.swift}
+                  onChange={(e) => setFormData({ ...formData, swift: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="MBBEMYKL"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm text-coffee-800">Active</label>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  className="flex-1 bg-coffee-600 text-white py-3 rounded-lg font-semibold hover:bg-coffee-700 transition"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Payment Channels Manager Component
+function PaymentChannelsManager() {
+  const [channels, setChannels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingChannel, setEditingChannel] = useState<any | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'bank',
+    details: '',
+    instructions: '',
+    isActive: true,
+  });
+
+  useEffect(() => {
+    fetchChannels();
+  }, []);
+
+  const fetchChannels = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/payment-channels', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.channels) {
+        setChannels(data.channels);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment channels');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = () => {
+    setEditingChannel(null);
+    setFormData({ name: '', type: 'bank', details: '', instructions: '', isActive: true });
+    setShowModal(true);
+  };
+
+  const handleEdit = (channel: any) => {
+    setEditingChannel(channel);
+    setFormData({
+      name: channel.name,
+      type: channel.type,
+      details: channel.details,
+      instructions: channel.instructions || '',
+      isActive: channel.isActive,
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const url = '/api/admin/payment-channels';
+      const method = editingChannel ? 'PUT' : 'POST';
+      const body = editingChannel ? { ...formData, id: editingChannel.id } : formData;
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(editingChannel ? 'Payment channel updated!' : 'Payment channel created!');
+        setShowModal(false);
+        fetchChannels();
+      } else {
+        alert(data.error || 'Failed to save');
+      }
+    } catch (error) {
+      alert('Connection error');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this payment channel?')) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/payment-channels?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Payment channel deleted!');
+        fetchChannels();
+      } else {
+        alert(data.error || 'Failed to delete');
+      }
+    } catch (error) {
+      alert('Connection error');
+    }
+  };
+
+  if (loading) return <div className="text-center py-4">Loading...</div>;
+
+  return (
+    <div>
+      <button
+        onClick={handleCreate}
+        className="mb-4 bg-coffee-600 text-white px-4 py-2 rounded-lg hover:bg-coffee-700 transition"
+      >
+        ➕ Add Payment Channel
+      </button>
+
+      <div className="space-y-3">
+        {channels.map((channel) => (
+          <div key={channel.id} className="border border-coffee-200 rounded-lg p-4 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-coffee-800">{channel.name}</h3>
+              <p className="text-sm text-coffee-600">Type: {channel.type}</p>
+              <p className="text-sm text-coffee-600">Details: {channel.details}</p>
+              {channel.instructions && (
+                <p className="text-sm text-coffee-500">Instructions: {channel.instructions}</p>
+              )}
+              <span className={`text-xs px-2 py-1 rounded ${channel.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {channel.isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => handleEdit(channel)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
+                ✏️ Edit
+              </button>
+              <button onClick={() => handleDelete(channel.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-coffee-800 mb-4">
+              {editingChannel ? 'Edit Payment Channel' : 'Add Payment Channel'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Payment Channel 1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                >
+                  <option value="bank">Bank</option>
+                  <option value="ewallet">E-Wallet</option>
+                  <option value="crypto">Crypto</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Details</label>
+                <textarea
+                  value={formData.details}
+                  onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Transfer to Maybank: 1234567890"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Instructions (Optional)</label>
+                <textarea
+                  value={formData.instructions}
+                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                  className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+                  placeholder="Include reference number in transfer"
+                  rows={2}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm text-coffee-800">Active</label>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  className="flex-1 bg-coffee-600 text-white py-3 rounded-lg font-semibold hover:bg-coffee-700 transition"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

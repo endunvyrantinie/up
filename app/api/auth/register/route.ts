@@ -12,10 +12,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Phone number and password are required' }, { status: 400 });
     }
 
+    // Normalize phone number (remove spaces, dashes, etc.)
+    const normalizedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
+
     const users = readUsers();
     const { findUserByPhone } = await import('@/lib/db');
     
-    if (findUserByPhone(phone)) {
+    // Check if phone already exists (try normalized and original)
+    if (findUserByPhone(normalizedPhone) || findUserByPhone(phone)) {
+      return NextResponse.json({ error: 'Phone number already exists' }, { status: 400 });
+    }
+    
+    // Also check in all users for any format match
+    const existingUser = users.find(u => {
+      const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
+      return userPhone === normalizedPhone || u.phone === phone || u.phone === normalizedPhone;
+    });
+    
+    if (existingUser) {
       return NextResponse.json({ error: 'Phone number already exists' }, { status: 400 });
     }
 
@@ -32,8 +46,8 @@ export async function POST(request: NextRequest) {
 
     const newUser = {
       id: Date.now().toString(),
-      username: phone, // Use phone as username
-      phone: phone,
+      username: normalizedPhone, // Use normalized phone as username
+      phone: normalizedPhone, // Store normalized phone
       email: `${phone}@coffee.com`, // Keep for backward compatibility
       password: hashedPassword,
       referralCode: referralCodeToUse,

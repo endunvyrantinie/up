@@ -147,5 +147,90 @@ body {
     -ms-user-select: none;
     user-select: none;
   }
+  
+  /* App-like smooth scrolling */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Mobile app container */
+  .app-container {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  /* Prevent pull-to-refresh on mobile */
+  .no-pull-refresh {
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Better button touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Mobile-optimized cards */
+  .mobile-card {
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Swipe gestures support */
+  .swipeable {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Mobile-specific media queries */
+@media (max-width: 640px) {
+  /* Larger touch targets on mobile */
+  button, a, input, select, textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Better spacing on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* iOS specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+  
+  input, textarea {
+    -webkit-user-select: text;
+  }
+}
+
+/* Android specific optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
 }
 

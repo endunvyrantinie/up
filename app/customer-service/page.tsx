@@ -9,7 +9,7 @@ export default function CustomerServicePage() {
   const telegramGroup = process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || process.env.NEXT_PUBLIC_TELEGRAM_GROUP || 'https://t.me/coffeerewardsgroup';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       {/* Enhanced Header */}
       <div className="bg-gradient-to-r from-coffee-brown to-coffee-700 text-white p-6 shadow-xl">
         <div className="container mx-auto flex justify-between items-center">

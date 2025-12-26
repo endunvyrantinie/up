@@ -91,7 +91,7 @@ export default function TeamPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 pb-20 sm:pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       {/* Top Section - Mobile Optimized */}
       <div className="bg-coffee-brown text-white p-4 sm:p-6 mb-4 sm:mb-6">
         <div className="mb-3 sm:mb-4">

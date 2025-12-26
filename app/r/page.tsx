@@ -29,11 +29,14 @@ function RegisterContent() {
     }
 
     try {
+      // Normalize phone number (remove spaces, dashes, etc.)
+      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '');
+      
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: formData.phone,
+          phone: normalizedPhone,
           password: formData.password,
           referralCode: formData.referralCode || undefined,
         }),
@@ -55,7 +58,7 @@ function RegisterContent() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              phone: formData.phone,
+              phone: normalizedPhone,
               password: formData.password,
             }),
           });
@@ -109,8 +112,8 @@ function RegisterContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-100 to-coffee-200 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-100 to-coffee-200 flex items-center justify-center p-4 swipeable">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden mobile-card">
         {/* Coffee Logo - Mobile Optimized */}
         <div className="bg-coffee-brown text-white p-4 sm:p-6 text-center">
           <div className="text-4xl sm:text-5xl mb-2">☕</div>
@@ -203,7 +206,7 @@ function RegisterContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-coffee-brown text-white py-4 rounded-lg font-bold text-lg hover:bg-coffee-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-coffee-brown text-white py-4 rounded-lg font-bold text-lg hover:bg-coffee-700 transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-target no-select shadow-lg active:shadow-xl"
             >
               {loading ? 'Creating Account...' : 'Create an account now'}
             </button>

@@ -101,7 +101,7 @@ function HomeContent() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-24">
+    <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 via-coffee-100 to-coffee-200 pb-28 swipeable">
       <InformationModal isOpen={showInfo} onClose={handleCloseInfo} />
 
       {/* Top Banner - Ultra Enhanced */}
@@ -148,7 +148,7 @@ function HomeContent() {
       {/* Main Content */}
       <div className="container mx-auto px-4 -mt-8">
         {/* Action Buttons - Mobile Optimized */}
-        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-8 mb-6 border-2 border-coffee-100 hover:shadow-3xl transition-all duration-300">
+        <div className="bg-white rounded-3xl shadow-2xl p-4 sm:p-8 mb-6 border-2 border-coffee-100 mobile-card">
           <div className="flex justify-around gap-2 sm:gap-4">
             <Link
               href="/recharge"
@@ -185,7 +185,7 @@ function HomeContent() {
 
         {/* Stats Cards - Mobile Optimized */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
-          <div className="bg-gradient-to-br from-white via-coffee-50 to-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 border-2 border-coffee-200 active:shadow-3xl active:scale-[1.02] transition-all duration-300 relative overflow-hidden touch-manipulation">
+          <div className="bg-gradient-to-br from-white via-coffee-50 to-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 border-2 border-coffee-200 mobile-card relative overflow-hidden touch-manipulation">
             <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-coffee-100/30 rounded-full -translate-y-12 translate-x-12 sm:-translate-y-16 sm:translate-x-16"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-2 sm:mb-3">

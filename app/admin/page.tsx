@@ -994,21 +994,48 @@ export default function AdminPage() {
 
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-coffee-800 mb-4">🏦 Bank Accounts Management</h2>
-              <p className="text-coffee-600 mb-6">Manage bank accounts for withdrawal</p>
+            {/* Settings Header */}
+            <div className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white rounded-2xl shadow-xl p-6">
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                <span>⚙️</span>
+                <span>System Settings</span>
+              </h1>
+              <p className="text-coffee-100">Manage all system configurations and settings</p>
+            </div>
+
+            {/* Bank Accounts Management */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-500">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">🏦</span>
+                <div>
+                  <h2 className="text-2xl font-bold text-coffee-800">Bank Accounts Management</h2>
+                  <p className="text-coffee-600 text-sm">Manage bank accounts for user withdrawals</p>
+                </div>
+              </div>
               <BankAccountsManager />
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-coffee-800 mb-4">💳 Payment Channels Management</h2>
-              <p className="text-coffee-600 mb-6">Manage payment channels for recharge</p>
+            {/* Payment Channels Management */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-green-500">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">💳</span>
+                <div>
+                  <h2 className="text-2xl font-bold text-coffee-800">Payment Channels Management</h2>
+                  <p className="text-coffee-600 text-sm">Manage payment channels for user recharges</p>
+                </div>
+              </div>
               <PaymentChannelsManager />
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h2 className="text-2xl font-bold text-coffee-800 mb-4">💬 Customer Support Settings</h2>
-              <p className="text-coffee-600 mb-6">Manage Telegram links for customer support</p>
+            {/* Customer Support Settings */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-purple-500">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">💬</span>
+                <div>
+                  <h2 className="text-2xl font-bold text-coffee-800">Customer Support Settings</h2>
+                  <p className="text-coffee-600 text-sm">Manage Telegram links for customer support</p>
+                </div>
+              </div>
               <SupportSettingsManager />
             </div>
           </div>
@@ -1590,6 +1617,8 @@ function SupportSettingsManager() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -1603,10 +1632,15 @@ function SupportSettingsManager() {
       });
       const data = await res.json();
       if (data.settings) {
-        setSettings(data.settings);
+        setSettings({
+          telegramSupport: data.settings.telegramSupport || '',
+          telegramChannel: data.settings.telegramChannel || '',
+          telegramGroup: data.settings.telegramGroup || '',
+        });
       }
     } catch (error) {
       console.error('Failed to fetch settings');
+      setError('Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -1614,11 +1648,14 @@ function SupportSettingsManager() {
 
   const handleSave = async () => {
     if (!settings.telegramSupport || !settings.telegramChannel || !settings.telegramGroup) {
-      alert('All fields are required');
+      setError('All fields are required');
+      setSuccess('');
       return;
     }
 
     setSaving(true);
+    setError('');
+    setSuccess('');
     try {
       const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/settings', {
@@ -1632,71 +1669,158 @@ function SupportSettingsManager() {
 
       const data = await res.json();
       if (data.success) {
-        alert('Settings saved successfully!');
+        setSuccess('Settings saved successfully!');
+        setError('');
         fetchSettings();
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        alert(data.error || 'Failed to save settings');
+        setError(data.error || 'Failed to save settings');
+        setSuccess('');
       }
     } catch (error) {
-      alert('Connection error');
+      setError('Connection error. Please try again.');
+      setSuccess('');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-coffee-600"></div>
+        <p className="text-coffee-600 mt-4 font-semibold">Loading settings...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-semibold text-coffee-800 mb-2">
-          📞 Telegram Support URL
+    <div className="space-y-6">
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="bg-green-50 border-2 border-green-200 text-green-800 px-4 py-3 rounded-xl flex items-center gap-2">
+          <span className="text-xl">✅</span>
+          <span className="font-semibold">{success}</span>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2">
+          <span className="text-xl">⚠️</span>
+          <span className="font-semibold">{error}</span>
+        </div>
+      )}
+
+      {/* Telegram Support URL */}
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-5">
+        <label className="block text-sm font-bold text-coffee-800 mb-3 flex items-center gap-2">
+          <span className="text-2xl">📞</span>
+          <span>Telegram Support URL</span>
         </label>
         <input
-          type="url"
+          type="text"
           value={settings.telegramSupport}
-          onChange={(e) => setSettings({ ...settings, telegramSupport: e.target.value })}
-          className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+          onChange={(e) => {
+            setSettings({ ...settings, telegramSupport: e.target.value });
+            setError('');
+          }}
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-coffee-900 font-medium"
           placeholder="https://t.me/your_support_username"
         />
-        <p className="text-xs text-coffee-500 mt-1">Link to Telegram support/contact</p>
+        <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram support/contact for users</p>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-coffee-800 mb-2">
-          📢 Telegram Channel URL
+      {/* Telegram Channel URL */}
+      <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-5">
+        <label className="block text-sm font-bold text-coffee-800 mb-3 flex items-center gap-2">
+          <span className="text-2xl">📢</span>
+          <span>Telegram Channel URL</span>
         </label>
         <input
-          type="url"
+          type="text"
           value={settings.telegramChannel}
-          onChange={(e) => setSettings({ ...settings, telegramChannel: e.target.value })}
-          className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+          onChange={(e) => {
+            setSettings({ ...settings, telegramChannel: e.target.value });
+            setError('');
+          }}
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-coffee-900 font-medium"
           placeholder="https://t.me/your_channel_username"
         />
-        <p className="text-xs text-coffee-500 mt-1">Link to Telegram channel</p>
+        <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram channel for announcements</p>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-coffee-800 mb-2">
-          👥 Telegram Group URL
+      {/* Telegram Group URL */}
+      <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-5">
+        <label className="block text-sm font-bold text-coffee-800 mb-3 flex items-center gap-2">
+          <span className="text-2xl">👥</span>
+          <span>Telegram Group URL</span>
         </label>
         <input
-          type="url"
+          type="text"
           value={settings.telegramGroup}
-          onChange={(e) => setSettings({ ...settings, telegramGroup: e.target.value })}
-          className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
+          onChange={(e) => {
+            setSettings({ ...settings, telegramGroup: e.target.value });
+            setError('');
+          }}
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-coffee-900 font-medium"
           placeholder="https://t.me/your_group_username"
         />
-        <p className="text-xs text-coffee-500 mt-1">Link to Telegram group</p>
+        <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram group for community</p>
       </div>
 
+      {/* Save Button */}
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-coffee-600 text-white px-4 py-3 rounded-lg hover:bg-coffee-700 transition disabled:opacity-50 font-semibold"
+        className="w-full bg-gradient-to-r from-coffee-600 to-coffee-700 text-white px-6 py-4 rounded-xl hover:from-coffee-700 hover:to-coffee-800 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:scale-105 active:scale-95"
       >
-        {saving ? 'Saving...' : '💾 Save Settings'}
+        {saving ? (
+          <>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <span>Saving...</span>
+          </>
+        ) : (
+          <>
+            <span className="text-2xl">💾</span>
+            <span>Save Settings</span>
+          </>
+        )}
       </button>
+
+      {/* Preview Section */}
+      {(settings.telegramSupport || settings.telegramChannel || settings.telegramGroup) && (
+        <div className="bg-coffee-50 border-2 border-coffee-200 rounded-xl p-5 mt-4">
+          <h3 className="text-sm font-bold text-coffee-800 mb-3 flex items-center gap-2">
+            <span>👁️</span>
+            <span>Preview</span>
+          </h3>
+          <div className="space-y-2 text-sm">
+            {settings.telegramSupport && (
+              <div className="flex items-center gap-2">
+                <span className="text-coffee-600 font-semibold">Support:</span>
+                <a href={settings.telegramSupport} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                  {settings.telegramSupport}
+                </a>
+              </div>
+            )}
+            {settings.telegramChannel && (
+              <div className="flex items-center gap-2">
+                <span className="text-coffee-600 font-semibold">Channel:</span>
+                <a href={settings.telegramChannel} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                  {settings.telegramChannel}
+                </a>
+              </div>
+            )}
+            {settings.telegramGroup && (
+              <div className="flex items-center gap-2">
+                <span className="text-coffee-600 font-semibold">Group:</span>
+                <a href={settings.telegramGroup} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                  {settings.telegramGroup}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

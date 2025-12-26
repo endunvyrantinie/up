@@ -373,35 +373,91 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-50 to-coffee-100 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-coffee-800">Admin Panel</h1>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-coffee-50 to-gray-100">
+      <div className="flex h-screen overflow-hidden">
+        {/* Sidebar Navigation */}
+        <div className="hidden lg:flex flex-col w-64 bg-gradient-to-b from-coffee-800 to-coffee-900 text-white shadow-2xl">
+          <div className="p-6 border-b border-coffee-700">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <span className="text-3xl">☕</span>
+              <span>Admin Panel</span>
+            </h1>
+            <p className="text-coffee-300 text-sm mt-1">Coffee Rewards System</p>
           </div>
-
-          <div className="flex gap-2 mt-4 border-b border-coffee-200 overflow-x-auto">
-            {(['dashboard', 'users', 'transactions', 'daily', 'products', 'settings'] as const).map((tab) => (
+          
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            {([
+              { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+              { id: 'users', label: '👥 Users', icon: '👥' },
+              { id: 'transactions', label: '💳 Transactions', icon: '💳' },
+              { id: 'daily', label: '📅 Daily Returns', icon: '📅' },
+              { id: 'products', label: '📦 Products', icon: '📦' },
+              { id: 'settings', label: '⚙️ Settings', icon: '⚙️' },
+            ] as const).map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-sm font-semibold capitalize whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'text-coffee-600 border-b-2 border-coffee-600'
-                    : 'text-coffee-400'
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-white text-coffee-800 shadow-lg transform scale-105'
+                    : 'text-coffee-200 hover:bg-coffee-700 hover:text-white'
                 }`}
               >
-                {tab === 'dashboard' ? '📊 Dashboard' : tab === 'products' ? '📦 Products' : tab === 'settings' ? '⚙️ Settings' : tab}
+                <span className="text-xl">{tab.icon}</span>
+                <span className="font-semibold">{tab.label.replace(/^[^\s]+\s/, '')}</span>
               </button>
             ))}
+          </nav>
+
+          <div className="p-4 border-t border-coffee-700">
+            <button
+              onClick={handleLogout}
+              className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-semibold transition shadow-lg flex items-center justify-center gap-2"
+            >
+              <span>🚪</span>
+              <span>Logout</span>
+            </button>
           </div>
         </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Header (Mobile) */}
+          <div className="lg:hidden bg-white shadow-lg border-b border-coffee-200 p-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-coffee-800 flex items-center gap-2">
+                <span>☕</span>
+                <span>Admin Panel</span>
+              </h1>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm"
+              >
+                Logout
+              </button>
+            </div>
+            
+            {/* Mobile Tabs */}
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              {(['dashboard', 'users', 'transactions', 'daily', 'products', 'settings'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${
+                    activeTab === tab
+                      ? 'bg-coffee-600 text-white shadow-md'
+                      : 'bg-coffee-100 text-coffee-700'
+                  }`}
+                >
+                  {tab === 'dashboard' ? '📊' : tab === 'users' ? '👥' : tab === 'transactions' ? '💳' : tab === 'daily' ? '📅' : tab === 'products' ? '📦' : '⚙️'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="max-w-7xl mx-auto">
 
         {activeTab === 'dashboard' && stats && (
           <div className="space-y-6">
@@ -1054,6 +1110,9 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1191,56 +1250,84 @@ function BankAccountsManager() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">{editingAccount ? 'Edit' : 'Add'} Bank Account</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-slideUp">
+            <div className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white p-4 rounded-2xl mb-6 -m-6">
+              <h3 className="text-2xl font-bold">{editingAccount ? '✏️ Edit' : '➕ Add'} Bank Account</h3>
+            </div>
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Bank"
-                value={formData.bank}
-                onChange={(e) => setFormData({ ...formData, bank: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Account Number"
-                value={formData.account}
-                onChange={(e) => setFormData({ ...formData, account: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Account Holder"
-                value={formData.accountHolder}
-                onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="SWIFT (optional)"
-                value={formData.swift}
-                onChange={(e) => setFormData({ ...formData, swift: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <label className="flex items-center gap-2">
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Account Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Primary Account"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Bank Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Maybank"
+                  value={formData.bank}
+                  onChange={(e) => setFormData({ ...formData, bank: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Account Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g., 1234567890"
+                  value={formData.account}
+                  onChange={(e) => setFormData({ ...formData, account: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Account Holder</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Coffee Rewards Sdn Bhd"
+                  value={formData.accountHolder}
+                  onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">SWIFT Code (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g., MBBEMYKL"
+                  value={formData.swift}
+                  onChange={(e) => setFormData({ ...formData, swift: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 font-mono"
+                />
+              </div>
+              <label className="flex items-center gap-3 p-4 bg-coffee-50 rounded-xl cursor-pointer hover:bg-coffee-100 transition">
                 <input
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-5 h-5 text-coffee-600 rounded focus:ring-coffee-500"
                 />
-                Active
+                <span className="font-semibold text-coffee-800">Active (visible to users)</span>
               </label>
-              <div className="flex gap-3">
-                <button onClick={handleSave} className="flex-1 bg-coffee-600 text-white py-2 rounded-lg">Save</button>
-                <button onClick={() => setShowModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg">Cancel</button>
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={handleSave} 
+                  className="flex-1 bg-gradient-to-r from-coffee-600 to-coffee-700 text-white py-3 rounded-xl hover:from-coffee-700 hover:to-coffee-800 transition font-semibold shadow-lg"
+                >
+                  💾 Save
+                </button>
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-400 transition font-semibold"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
@@ -1350,78 +1437,142 @@ function PaymentChannelsManager() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-center py-8 text-coffee-600">Loading payment channels...</div>;
 
   return (
-    <div>
+    <div className="space-y-4">
       <button
         onClick={handleCreate}
-        className="mb-4 bg-coffee-600 text-white px-4 py-2 rounded-lg hover:bg-coffee-700"
+        className="w-full md:w-auto bg-gradient-to-r from-coffee-600 to-coffee-700 text-white px-6 py-3 rounded-xl hover:from-coffee-700 hover:to-coffee-800 transition font-semibold shadow-lg flex items-center justify-center gap-2"
       >
-        + Add Payment Channel
+        <span className="text-xl">➕</span>
+        <span>Add Payment Channel</span>
       </button>
-      <div className="space-y-3">
-        {channels.map((channel) => (
-          <div key={channel.id} className="border border-coffee-200 rounded-lg p-4 flex justify-between items-center">
-            <div>
-              <p><strong>Name:</strong> {channel.name}</p>
-              <p><strong>Type:</strong> {channel.type}</p>
-              <p><strong>Details:</strong> {channel.details}</p>
-              <span className={`px-2 py-1 rounded text-xs ${channel.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {channel.isActive ? 'Active' : 'Inactive'}
-              </span>
+      
+      {channels.length === 0 ? (
+        <div className="text-center py-12 bg-coffee-50 rounded-xl border-2 border-dashed border-coffee-300">
+          <p className="text-coffee-600 font-semibold">No payment channels yet</p>
+          <p className="text-coffee-500 text-sm mt-1">Click "Add Payment Channel" to create one</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {channels.map((channel) => (
+            <div key={channel.id} className="bg-gradient-to-br from-white to-coffee-50 border-2 border-coffee-200 rounded-xl p-5 shadow-lg hover:shadow-xl transition transform hover:scale-105">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-coffee-800 mb-2">{channel.name}</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-coffee-600 font-semibold">Type:</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{channel.type}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-coffee-600 font-semibold">Details:</span>
+                      <span className="text-coffee-800">{channel.details}</span>
+                    </div>
+                    {channel.instructions && (
+                      <div className="mt-2 p-2 bg-coffee-100 rounded text-xs text-coffee-700">
+                        {channel.instructions}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  channel.isActive 
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                    : 'bg-gray-100 text-gray-700 border-2 border-gray-300'
+                }`}>
+                  {channel.isActive ? '✓ Active' : '✗ Inactive'}
+                </span>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button 
+                  onClick={() => handleEdit(channel)} 
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-semibold text-sm"
+                >
+                  ✏️ Edit
+                </button>
+                <button 
+                  onClick={() => handleDelete(channel.id)} 
+                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition font-semibold text-sm"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => handleEdit(channel)} className="bg-blue-500 text-white px-3 py-1 rounded text-sm">Edit</button>
-              <button onClick={() => handleDelete(channel.id)} className="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">{editingChannel ? 'Edit' : 'Add'} Payment Channel</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-slideUp max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-coffee-600 to-coffee-700 text-white p-4 rounded-2xl mb-6 -m-6">
+              <h3 className="text-2xl font-bold">{editingChannel ? '✏️ Edit' : '➕ Add'} Payment Channel</h3>
+            </div>
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Type"
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Details"
-                value={formData.details}
-                onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <textarea
-                placeholder="Instructions"
-                value={formData.instructions}
-                onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <label className="flex items-center gap-2">
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Channel Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Bank Transfer"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Type</label>
+                <input
+                  type="text"
+                  placeholder="e.g., bank, e-wallet, crypto"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Details</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Secure & Fast"
+                  value={formData.details}
+                  onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-coffee-800 mb-2">Instructions (Optional)</label>
+                <textarea
+                  placeholder="Payment instructions for users..."
+                  value={formData.instructions}
+                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 resize-none"
+                />
+              </div>
+              <label className="flex items-center gap-3 p-4 bg-coffee-50 rounded-xl cursor-pointer hover:bg-coffee-100 transition">
                 <input
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-5 h-5 text-coffee-600 rounded focus:ring-coffee-500"
                 />
-                Active
+                <span className="font-semibold text-coffee-800">Active (visible to users)</span>
               </label>
-              <div className="flex gap-3">
-                <button onClick={handleSave} className="flex-1 bg-coffee-600 text-white py-2 rounded-lg">Save</button>
-                <button onClick={() => setShowModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg">Cancel</button>
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={handleSave} 
+                  className="flex-1 bg-gradient-to-r from-coffee-600 to-coffee-700 text-white py-3 rounded-xl hover:from-coffee-700 hover:to-coffee-800 transition font-semibold shadow-lg"
+                >
+                  💾 Save
+                </button>
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl hover:bg-gray-400 transition font-semibold"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

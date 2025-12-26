@@ -1,24 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { comparePassword, generateToken } from '@/lib/auth';
-import { findUserByEmail } from '@/lib/db';
+import { findUserByEmail, findUserByPhone } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, isAdmin } = body;
+    const { phone, email, password, isAdmin } = body;
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    // Support both phone and email for backward compatibility
+    const loginIdentifier = phone || email;
+
+    if (!loginIdentifier || !password) {
+      return NextResponse.json({ error: 'Phone number and password are required' }, { status: 400 });
     }
 
-    // Admin login
+    // Admin login (still uses email)
     if (isAdmin) {
       const adminEmail = process.env.ADMIN_EMAIL || 'admin@coffee.com';
       const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
       
-      if (email === adminEmail && password === adminPassword) {
+      if (loginIdentifier === adminEmail && password === adminPassword) {
         const token = generateToken('admin', true);
         return NextResponse.json({ 
           success: true, 
@@ -26,19 +29,24 @@ export async function POST(request: NextRequest) {
           user: { id: 'admin', email: adminEmail, isAdmin: true }
         });
       }
-      return NextResponse.json({ error: 'Invalid admin email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid admin credentials' }, { status: 401 });
     }
 
-    // User login
+    // User login - try phone first, then email for backward compatibility
     try {
-      const user = findUserByEmail(email);
+      let user = findUserByPhone(loginIdentifier);
       if (!user) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        // Fallback to email for existing users
+        user = findUserByEmail(loginIdentifier);
+      }
+      
+      if (!user) {
+        return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
       }
 
       const isValid = await comparePassword(password, user.password);
       if (!isValid) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
       }
 
       // Generate fresh token
@@ -54,6 +62,7 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           username: user.username,
+          phone: user.phone || user.username,
           email: user.email,
           referralCode: user.referralCode,
           balance: user.balance,

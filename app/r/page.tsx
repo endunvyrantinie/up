@@ -33,8 +33,7 @@ function RegisterContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.phone,
-          email: `${formData.phone}@coffee.com`,
+          phone: formData.phone,
           password: formData.password,
           referralCode: formData.referralCode || undefined,
         }),
@@ -56,7 +55,7 @@ function RegisterContent() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              email: `${formData.phone}@coffee.com`,
+              phone: formData.phone,
               password: formData.password,
             }),
           });

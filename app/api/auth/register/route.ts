@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, generateReferralCode } from '@/lib/auth';
-import { readUsers, writeUsers, findUserByEmail, findUserByReferralCode, readReferrals, writeReferrals } from '@/lib/db';
+import { readUsers, writeUsers, findUserByPhone, findUserByReferralCode, readReferrals, writeReferrals } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, email, password, referralCode } = await request.json();
+    const { phone, password, referralCode } = await request.json();
 
-    if (!username || !email || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!phone || !password) {
+      return NextResponse.json({ error: 'Phone number and password are required' }, { status: 400 });
     }
 
     const users = readUsers();
+    const { findUserByPhone } = await import('@/lib/db');
     
-    if (findUserByEmail(email)) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
+    if (findUserByPhone(phone)) {
+      return NextResponse.json({ error: 'Phone number already exists' }, { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
@@ -31,8 +32,9 @@ export async function POST(request: NextRequest) {
 
     const newUser = {
       id: Date.now().toString(),
-      username,
-      email,
+      username: phone, // Use phone as username
+      phone: phone,
+      email: `${phone}@coffee.com`, // Keep for backward compatibility
       password: hashedPassword,
       referralCode: referralCodeToUse,
       referredBy: referralCode || undefined,
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: newUser.id,
         username: newUser.username,
-        email: newUser.email,
+        phone: newUser.phone,
         referralCode: newUser.referralCode,
       }
     });

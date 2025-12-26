@@ -25,7 +25,10 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'transactions' | 'daily'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'transactions' | 'daily' | 'products'>('dashboard');
+  const [products, setProducts] = useState<any[]>([]);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [productForm, setProductForm] = useState({ price: '', dailyIncome: '', validityDays: '' });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [processingDaily, setProcessingDaily] = useState(false);
   const [stats, setStats] = useState<{
@@ -63,8 +66,15 @@ export default function AdminPage() {
       setIsLoggedIn(true);
       fetchUsers();
       fetchStats();
+      fetchProducts();
     }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'products') {
+      fetchProducts();
+    }
+  }, [activeTab]);
 
   const fetchStats = async () => {
     try {
@@ -78,6 +88,58 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to fetch stats');
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/products', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.products) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products');
+    }
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const updates: any = {};
+      if (productForm.price) updates.price = parseFloat(productForm.price);
+      if (productForm.dailyIncome) updates.dailyIncome = parseFloat(productForm.dailyIncome);
+      if (productForm.validityDays) updates.validityDays = parseInt(productForm.validityDays);
+
+      const res = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: editingProduct.id,
+          updates,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Product updated successfully!');
+        setEditingProduct(null);
+        setProductForm({ price: '', dailyIncome: '', validityDays: '' });
+        fetchProducts();
+      } else {
+        alert(data.error || 'Failed to update product');
+      }
+    } catch (error) {
+      console.error('Update product error:', error);
+      alert('Failed to update product');
     }
   };
 
@@ -389,7 +451,7 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-xl mb-6">
           <div className="flex border-b border-coffee-200 overflow-x-auto">
-            {(['dashboard', 'users', 'transactions', 'daily'] as const).map((tab) => (
+            {(['dashboard', 'users', 'transactions', 'daily', 'products'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -399,7 +461,7 @@ export default function AdminPage() {
                     : 'text-coffee-400'
                 }`}
               >
-                {tab === 'dashboard' ? '📊 Dashboard' : tab}
+                {tab === 'dashboard' ? '📊 Dashboard' : tab === 'products' ? '📦 Products' : tab}
               </button>
             ))}
           </div>
@@ -992,6 +1054,123 @@ export default function AdminPage() {
                 {processingDaily ? 'Processing...' : 'Process Daily VIP Returns'}
               </button>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-2xl font-bold text-coffee-800 mb-4">VIP Products Management</h2>
+            <p className="text-coffee-600 mb-6">Edit product details (price, daily income, validity days)</p>
+            
+            <div className="space-y-4">
+              {products.map((product) => (
+                <div key={product.id} className="border border-coffee-200 rounded-xl p-4 hover:shadow-lg transition">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-coffee-800">{product.name}</h3>
+                      <p className="text-sm text-coffee-600">ID: {product.id}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingProduct(product);
+                        setProductForm({
+                          price: product.price.toString(),
+                          dailyIncome: product.dailyIncome.toString(),
+                          validityDays: product.validityDays.toString(),
+                        });
+                      }}
+                      className="px-4 py-2 bg-coffee-600 text-white rounded-lg hover:bg-coffee-700 text-sm font-semibold"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-coffee-600 mb-1">Price</p>
+                      <p className="font-bold text-coffee-800">RM {product.price.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-coffee-600 mb-1">Daily Income</p>
+                      <p className="font-bold text-coffee-800">RM {product.dailyIncome.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-coffee-600 mb-1">Total Income</p>
+                      <p className="font-bold text-green-600">RM {product.totalIncome.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-coffee-600 mb-1">Validity</p>
+                      <p className="font-bold text-coffee-800">{product.validityDays} days</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Edit Modal */}
+            {editingProduct && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full animate-slideUp border-2 border-coffee-200">
+                  <div className="bg-gradient-to-r from-coffee-brown to-coffee-600 text-white p-6 rounded-t-3xl">
+                    <h3 className="text-xl font-bold">Edit {editingProduct.name}</h3>
+                    <p className="text-white/90 text-sm mt-1">Update product details</p>
+                  </div>
+                  
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-coffee-800 mb-2">Price (RM)</label>
+                      <input
+                        type="number"
+                        value={productForm.price}
+                        onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                        className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
+                        placeholder={editingProduct.price.toString()}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-coffee-800 mb-2">Daily Income (RM)</label>
+                      <input
+                        type="number"
+                        value={productForm.dailyIncome}
+                        onChange={(e) => setProductForm({ ...productForm, dailyIncome: e.target.value })}
+                        className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
+                        placeholder={editingProduct.dailyIncome.toString()}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-coffee-800 mb-2">Validity Days</label>
+                      <input
+                        type="number"
+                        value={productForm.validityDays}
+                        onChange={(e) => setProductForm({ ...productForm, validityDays: e.target.value })}
+                        className="w-full px-4 py-2 border border-coffee-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 bg-white text-coffee-900"
+                        placeholder={editingProduct.validityDays.toString()}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={handleUpdateProduct}
+                        className="flex-1 bg-coffee-600 text-white py-3 rounded-lg font-semibold hover:bg-coffee-700 transition"
+                      >
+                        Save Changes
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setProductForm({ price: '', dailyIncome: '', validityDays: '' });
+                        }}
+                        className="flex-1 bg-coffee-200 text-coffee-800 py-3 rounded-lg font-semibold hover:bg-coffee-300 transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

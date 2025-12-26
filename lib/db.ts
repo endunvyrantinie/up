@@ -37,7 +37,8 @@ initFile(VIP_PURCHASES_FILE, []);
 export interface User {
   id: string;
   username: string;
-  email: string;
+  phone: string; // Phone number instead of email
+  email?: string; // Keep for backward compatibility, but not required
   password: string; // hashed
   referralCode: string;
   referredBy?: string; // referral code of referrer
@@ -180,6 +181,11 @@ export const writeVIPPurchases = (purchases: VIPPurchase[]) => {
 export const findUserByEmail = (email: string): User | undefined => {
   const users = readUsers();
   return users.find(u => u.email === email);
+};
+
+export const findUserByPhone = (phone: string): User | undefined => {
+  const users = readUsers();
+  return users.find(u => u.phone === phone || u.username === phone);
 };
 
 export const findUserByReferralCode = (code: string): User | undefined => {

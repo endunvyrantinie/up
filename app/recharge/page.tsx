@@ -11,6 +11,8 @@ export default function RechargePage() {
   const [amount, setAmount] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   const amountChips = [50, 100, 200, 400, 800, 1600, 3000, 6000, 12000];
 
@@ -52,7 +54,6 @@ export default function RechargePage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // For MVP, immediately add to wallet (mock)
       const res = await fetch('/api/recharge', {
         method: 'POST',
         headers: {
@@ -62,11 +63,11 @@ export default function RechargePage() {
         body: JSON.stringify({ amount: rechargeAmount }),
       });
       const data = await res.json();
-      if (data.success) {
-        alert(`Recharge successful! RM ${rechargeAmount.toFixed(2)} added to your wallet.`);
+      if (data.success && data.qrCode) {
+        setQrCode(data.qrCode);
+        setShowQRModal(true);
         setAmount('');
         setSelectedAmount(null);
-        fetchUser();
       } else {
         alert(data.error || 'Recharge failed');
       }
@@ -216,6 +217,46 @@ export default function RechargePage() {
           </ul>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQRModal && qrCode && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full animate-slideUp border-2 border-coffee-200">
+            <div className="bg-gradient-to-r from-coffee-brown to-coffee-600 text-white p-6 rounded-t-3xl">
+              <h3 className="text-xl font-bold">Scan QR Code to Pay</h3>
+              <p className="text-white/90 text-sm mt-1">Complete your recharge payment</p>
+            </div>
+            
+            <div className="p-6 text-center">
+              <div className="bg-coffee-50 rounded-xl p-6 inline-block mb-4">
+                <p className="text-sm text-coffee-600 mb-3">CoffeePay QR Code</p>
+                <div className="bg-white p-4 rounded-lg inline-block">
+                  <img src={qrCode} alt="QR Code" className="w-64 h-64" />
+                </div>
+                <p className="text-lg font-bold text-coffee-800 mt-3">RM {selectedAmount || (amount ? parseFloat(amount) : 0).toFixed(2)}</p>
+                <p className="text-xs text-coffee-500 mt-2">Scan to complete payment</p>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> After scanning and completing payment, your balance will be updated once the transaction is approved by admin.
+                </p>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowQRModal(false);
+                  setQrCode(null);
+                  fetchUser();
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-coffee-brown to-coffee-600 text-white rounded-xl font-semibold hover:from-coffee-600 hover:to-coffee-700 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomTabBar />
     </div>

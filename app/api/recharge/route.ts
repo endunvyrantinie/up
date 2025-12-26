@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { findUserById, readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { generateQRCode } from '@/lib/qrCode';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,27 +30,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // For MVP: immediately add to wallet (mock)
-    user.balance += amount;
-    user.totalEarned += amount;
-    writeUsers(users);
+    // Generate QR code for payment
+    const qrCode = await generateQRCode(amount);
 
+    // For MVP: create pending transaction (not immediately added to wallet)
     const transactions = readTransactions();
+    const transactionId = Date.now().toString();
     transactions.push({
-      id: Date.now().toString(),
+      id: transactionId,
       userId: user.id,
       type: 'deposit',
       amount,
-      status: 'completed',
+      status: 'pending', // Changed to pending - admin needs to approve
       createdAt: new Date().toISOString(),
       description: 'Recharge deposit',
+      qrCode: qrCode, // Store QR code in transaction
     });
     writeTransactions(transactions);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Recharge successful',
-      balance: user.balance 
+      message: 'QR code generated. Please scan to complete payment.',
+      qrCode: qrCode,
+      amount: amount,
+      transactionId: transactionId
     });
   } catch (error) {
     console.error('Recharge error:', error);

@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
+    phone: '',
     password: '',
   });
 
@@ -91,19 +91,24 @@ export default function LoginPage() {
           )}
           
           <div>
-            <label className="block text-sm font-bold text-coffee-800 mb-2">📧 Email</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              required
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                setError('');
-              }}
-              disabled={loading}
-              className="w-full px-4 py-4 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400 text-lg transition-all"
-            />
+            <label className="block text-sm font-bold text-coffee-800 mb-2">📱 Phone Number</label>
+            <div className="flex">
+              <div className="bg-coffee-50 border-2 border-coffee-300 border-r-0 rounded-l-xl px-4 py-4 flex items-center">
+                <span className="text-coffee-700 font-semibold">+60</span>
+              </div>
+              <input
+                type="tel"
+                placeholder="Enter your phone number"
+                required
+                value={formData.phone}
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value });
+                  setError('');
+                }}
+                disabled={loading}
+                className="flex-1 px-4 py-4 border-2 border-coffee-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-coffee-900 placeholder-coffee-400 text-lg transition-all"
+              />
+            </div>
           </div>
           
           <div>

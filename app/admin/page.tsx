@@ -1723,7 +1723,7 @@ function SupportSettingsManager() {
             setSettings({ ...settings, telegramSupport: e.target.value });
             setError('');
           }}
-          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-coffee-900 font-medium"
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium"
           placeholder="https://t.me/your_support_username"
         />
         <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram support/contact for users</p>
@@ -1742,7 +1742,7 @@ function SupportSettingsManager() {
             setSettings({ ...settings, telegramChannel: e.target.value });
             setError('');
           }}
-          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-coffee-900 font-medium"
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900 font-medium"
           placeholder="https://t.me/your_channel_username"
         />
         <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram channel for announcements</p>
@@ -1761,7 +1761,7 @@ function SupportSettingsManager() {
             setSettings({ ...settings, telegramGroup: e.target.value });
             setError('');
           }}
-          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-coffee-900 font-medium"
+          className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
           placeholder="https://t.me/your_group_username"
         />
         <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram group for community</p>

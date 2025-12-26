@@ -195,6 +195,32 @@ body {
   }
 }
 
+/* Global Input Styles - Ensure text is visible */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+textarea,
+select {
+  color: #1a1a1a !important;
+  background-color: #ffffff !important;
+  -webkit-text-fill-color: #1a1a1a !important;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input[type="url"]::placeholder,
+input[type="tel"]::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #9ca3af !important;
+}
+
 /* Mobile-specific media queries */
 @media (max-width: 640px) {
   /* Larger touch targets on mobile */

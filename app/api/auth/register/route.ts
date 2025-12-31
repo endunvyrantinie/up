@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, generateReferralCode } from '@/lib/auth';
-import { readUsers, writeUsers, findUserByPhone, findUserByReferralCode, readReferrals, writeReferrals } from '@/lib/db';
+import { readUsers, writeUsers, findUserByPhone, findUserByReferralCode, findUserById, readReferrals, writeReferrals } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +73,29 @@ export async function POST(request: NextRequest) {
 
     users.push(newUser);
     writeUsers(users);
+    
+    // Verify the user was written (important for serverless environments)
+    let verifyUser = findUserById(newUser.id);
+    if (!verifyUser) {
+      console.error('User registration verification failed - user not found after write, retrying...');
+      // Small delay for file system sync
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Try writing again
+      writeUsers(users);
+      // Verify again
+      verifyUser = findUserById(newUser.id);
+    }
+    
+    if (verifyUser) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ User registered successfully: ${newUser.id} (${newUser.phone || newUser.username})`);
+        console.log(`Total users in database: ${readUsers().length}`);
+      }
+    } else {
+      // Always log errors
+      console.error('❌ User registration failed - user still not found after retry');
+    }
 
     // Handle referral commissions if referred
     if (referralCode) {

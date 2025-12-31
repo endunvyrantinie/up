@@ -80,18 +80,66 @@ export default function AdminPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (retryCount = 0) => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) {
+        console.error('No admin token found');
+        return;
+      }
+      
       const res = await fetch('/api/admin/users', {
         headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store', // Prevent caching issues
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to fetch users:', { 
+          status: res.status, 
+          error: errorData.error,
+          retryCount 
+        });
+        
+        // Retry once if failed
+        if (retryCount < 1) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Retrying fetchUsers...');
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchUsers(retryCount + 1);
+        }
+        return;
+      }
+      
       const data = await res.json();
-      if (data.users) {
+      
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Fetched users:', { count: data.users?.length || 0, total: data.total });
+      }
+      
+      if (data.users && Array.isArray(data.users)) {
         setUsers(data.users);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Successfully loaded ${data.users.length} users`);
+        }
+      } else {
+        // Always log warnings
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Invalid users data received:', data);
+        }
+        setUsers([]);
       }
     } catch (error) {
-      console.error('Failed to fetch users');
+      console.error('Failed to fetch users:', error);
+      // Retry once on network errors
+      if (retryCount < 1) {
+        console.log('Retrying fetchUsers after error...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return fetchUsers(retryCount + 1);
+      }
     }
   };
 
@@ -2045,6 +2093,12 @@ function SupportSettingsManager() {
     telegramSupport: '',
     telegramChannel: '',
     telegramGroup: '',
+    // QR Code Settings
+    qrDataFormat: 'COFFEEPAY-{amount}-{timestamp}',
+    qrDarkColor: '#8B4513',
+    qrLightColor: '#FFFFFF',
+    qrWidth: 300,
+    qrMargin: 2,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2067,6 +2121,12 @@ function SupportSettingsManager() {
           telegramSupport: data.settings.telegramSupport || '',
           telegramChannel: data.settings.telegramChannel || '',
           telegramGroup: data.settings.telegramGroup || '',
+          // QR Code Settings
+          qrDataFormat: data.settings.qrDataFormat || 'COFFEEPAY-{amount}-{timestamp}',
+          qrDarkColor: data.settings.qrDarkColor || '#8B4513',
+          qrLightColor: data.settings.qrLightColor || '#FFFFFF',
+          qrWidth: data.settings.qrWidth || 300,
+          qrMargin: data.settings.qrMargin || 2,
         });
       }
     } catch (error) {
@@ -2079,7 +2139,20 @@ function SupportSettingsManager() {
 
   const handleSave = async () => {
     if (!settings.telegramSupport || !settings.telegramChannel || !settings.telegramGroup) {
-      setError('All fields are required');
+      setError('All Telegram fields are required');
+      setSuccess('');
+      return;
+    }
+    
+    // Validate QR code settings
+    if (settings.qrWidth && (settings.qrWidth < 100 || settings.qrWidth > 1000)) {
+      setError('QR code width must be between 100 and 1000 pixels');
+      setSuccess('');
+      return;
+    }
+    
+    if (settings.qrMargin && (settings.qrMargin < 0 || settings.qrMargin > 10)) {
+      setError('QR code margin must be between 0 and 10');
       setSuccess('');
       return;
     }
@@ -2196,6 +2269,153 @@ function SupportSettingsManager() {
           placeholder="https://t.me/your_group_username"
         />
         <p className="text-xs text-coffee-600 mt-2 ml-1">Link to Telegram group for community</p>
+      </div>
+
+      {/* QR Code Settings Section */}
+      <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-xl p-6 mt-6">
+        <h3 className="text-xl font-bold text-coffee-800 mb-4 flex items-center gap-2">
+          <span className="text-2xl">📱</span>
+          <span>QR Code Settings</span>
+        </h3>
+        <p className="text-sm text-coffee-600 mb-4">Customize QR code appearance and data format</p>
+
+        {/* QR Code Data Format */}
+        <div className="mb-4">
+          <label className="block text-sm font-bold text-coffee-800 mb-2">
+            QR Code Data Format
+          </label>
+          <input
+            type="text"
+            value={settings.qrDataFormat}
+            onChange={(e) => {
+              setSettings({ ...settings, qrDataFormat: e.target.value });
+              setError('');
+            }}
+            className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900 font-medium"
+            placeholder="COFFEEPAY-{amount}-{timestamp}"
+          />
+          <p className="text-xs text-coffee-600 mt-2">
+            Available placeholders: <code className="bg-coffee-100 px-1 rounded">{'{amount}'}</code>, <code className="bg-coffee-100 px-1 rounded">{'{transactionId}'}</code>, <code className="bg-coffee-100 px-1 rounded">{'{timestamp}'}</code>, <code className="bg-coffee-100 px-1 rounded">{'{userId}'}</code>
+          </p>
+          <p className="text-xs text-coffee-500 mt-1">
+            Example: <code className="bg-coffee-100 px-1 rounded">https://payment.com/pay?amount={'{amount}'}&ref={'{transactionId}'}</code>
+          </p>
+        </div>
+
+        {/* QR Code Colors */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-bold text-coffee-800 mb-2">
+              QR Code Color (Dark)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.qrDarkColor}
+                onChange={(e) => {
+                  setSettings({ ...settings, qrDarkColor: e.target.value });
+                  setError('');
+                }}
+                className="w-16 h-12 border-2 border-coffee-300 rounded-lg cursor-pointer"
+              />
+              <input
+                type="text"
+                value={settings.qrDarkColor}
+                onChange={(e) => {
+                  setSettings({ ...settings, qrDarkColor: e.target.value });
+                  setError('');
+                }}
+                className="flex-1 px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900 font-medium"
+                placeholder="#8B4513"
+              />
+            </div>
+            <p className="text-xs text-coffee-600 mt-1">Color of QR code pattern</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-coffee-800 mb-2">
+              Background Color (Light)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={settings.qrLightColor}
+                onChange={(e) => {
+                  setSettings({ ...settings, qrLightColor: e.target.value });
+                  setError('');
+                }}
+                className="w-16 h-12 border-2 border-coffee-300 rounded-lg cursor-pointer"
+              />
+              <input
+                type="text"
+                value={settings.qrLightColor}
+                onChange={(e) => {
+                  setSettings({ ...settings, qrLightColor: e.target.value });
+                  setError('');
+                }}
+                className="flex-1 px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900 font-medium"
+                placeholder="#FFFFFF"
+              />
+            </div>
+            <p className="text-xs text-coffee-600 mt-1">Background color of QR code</p>
+          </div>
+        </div>
+
+        {/* QR Code Size */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-bold text-coffee-800 mb-2">
+              QR Code Width (pixels)
+            </label>
+            <input
+              type="number"
+              min="100"
+              max="1000"
+              value={settings.qrWidth}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 300;
+                setSettings({ ...settings, qrWidth: value });
+                setError('');
+              }}
+              className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900 font-medium"
+              placeholder="300"
+            />
+            <p className="text-xs text-coffee-600 mt-1">Recommended: 300-400 pixels</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-coffee-800 mb-2">
+              QR Code Margin
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="10"
+              value={settings.qrMargin}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 2;
+                setSettings({ ...settings, qrMargin: value });
+                setError('');
+              }}
+              className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900 font-medium"
+              placeholder="2"
+            />
+            <p className="text-xs text-coffee-600 mt-1">Space around QR code (0-10)</p>
+          </div>
+        </div>
+
+        {/* QR Code Preview */}
+        <div className="bg-white border-2 border-amber-200 rounded-xl p-4 mt-4">
+          <h4 className="text-sm font-bold text-coffee-800 mb-2">Preview Format:</h4>
+          <div className="bg-coffee-50 p-3 rounded-lg font-mono text-xs text-coffee-700 break-all">
+            {settings.qrDataFormat
+              .replace('{amount}', '100.00')
+              .replace('{transactionId}', '1234567890')
+              .replace('{timestamp}', Date.now().toString())
+              .replace('{userId}', 'USER123')
+              .replace('{type}', 'payment')}
+          </div>
+        </div>
       </div>
 
       {/* Save Button */}

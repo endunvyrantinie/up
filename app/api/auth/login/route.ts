@@ -41,12 +41,14 @@ export async function POST(request: NextRequest) {
       const { readUsers } = await import('@/lib/db');
       const allUsers = readUsers();
       
-      console.log('Login attempt:', { 
-        loginIdentifier, 
-        normalizedPhone, 
-        totalUsers: allUsers.length,
-        samplePhones: allUsers.slice(0, 3).map(u => u.phone)
-      });
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Login attempt:', { 
+          loginIdentifier, 
+          normalizedPhone, 
+          totalUsers: allUsers.length,
+        });
+      }
       
       // Try multiple matching strategies
       let user = allUsers.find(u => {
@@ -79,17 +81,22 @@ export async function POST(request: NextRequest) {
       }
       
       if (!user) {
-        console.error('Login failed: User not found', { 
-          loginIdentifier, 
-          normalizedPhone,
-          availablePhones: allUsers.map(u => u.phone).slice(0, 5)
-        });
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Login failed: User not found', { 
+            loginIdentifier, 
+            normalizedPhone,
+          });
+        }
         return NextResponse.json({ error: 'User not found. Please check your phone number or register first.' }, { status: 401 });
       }
 
       const isValid = await comparePassword(password, user.password);
       if (!isValid) {
-        console.error('Login failed: Invalid password for user:', user.id);
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Login failed: Invalid password for user:', user.id);
+        }
         return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
       }
 

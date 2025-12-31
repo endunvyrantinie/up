@@ -110,9 +110,50 @@ export interface VIPPurchase {
 // Read functions
 export const readUsers = (): User[] => {
   try {
+    // Ensure file exists
+    if (!fs.existsSync(USERS_FILE)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Users file does not exist, initializing...');
+      }
+      writeUsers([]);
+      return [];
+    }
+    
     const data = fs.readFileSync(USERS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
+    
+    // Handle empty file
+    if (!data || data.trim() === '') {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Users file is empty, initializing...');
+      }
+      writeUsers([]);
+      return [];
+    }
+    
+    const users = JSON.parse(data);
+    
+    // Validate it's an array
+    if (!Array.isArray(users)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Users file does not contain an array, resetting...');
+      }
+      writeUsers([]);
+      return [];
+    }
+    
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Read ${users.length} users from database`);
+    }
+    return users;
+  } catch (error) {
+    console.error('Error reading users file:', error);
+    // Try to recover by initializing empty array
+    try {
+      writeUsers([]);
+    } catch (writeError) {
+      console.error('Failed to initialize users file:', writeError);
+    }
     return [];
   }
 };
@@ -209,6 +250,12 @@ export interface Settings {
   telegramSupport: string;
   telegramChannel: string;
   telegramGroup: string;
+  // QR Code Settings
+  qrDataFormat?: string;
+  qrDarkColor?: string;
+  qrLightColor?: string;
+  qrWidth?: number;
+  qrMargin?: number;
 }
 
 export const readSettings = (): Settings => {
@@ -221,6 +268,12 @@ export const readSettings = (): Settings => {
       telegramSupport: process.env.NEXT_PUBLIC_TELEGRAM_SUPPORT_URL || 'https://t.me/coffeesupport',
       telegramChannel: process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL || 'https://t.me/coffeerewards',
       telegramGroup: process.env.NEXT_PUBLIC_TELEGRAM_GROUP_URL || 'https://t.me/coffeerewardsgroup',
+      // QR Code defaults
+      qrDataFormat: 'COFFEEPAY-{amount}-{timestamp}',
+      qrDarkColor: '#8B4513',
+      qrLightColor: '#FFFFFF',
+      qrWidth: 300,
+      qrMargin: 2,
     };
   }
 };
@@ -244,9 +297,38 @@ export const writeUsers = (users: User[]) => {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    
+    // Validate users array
+    if (!Array.isArray(users)) {
+      console.error('writeUsers: users is not an array, converting...');
+      users = [];
+    }
+    
+    // Write with explicit encoding
+    const jsonData = JSON.stringify(users, null, 2);
+    fs.writeFileSync(USERS_FILE, jsonData, { encoding: 'utf8', flag: 'w' });
+    
+    // Verify write by reading back
+    try {
+      const verifyData = fs.readFileSync(USERS_FILE, 'utf-8');
+      const verifyUsers = JSON.parse(verifyData);
+      
+      if (verifyUsers.length !== users.length) {
+        console.error(`Write verification failed: expected ${users.length}, got ${verifyUsers.length}`);
+        // Try one more time
+        fs.writeFileSync(USERS_FILE, jsonData, { encoding: 'utf8', flag: 'w' });
+      }
+    } catch (verifyError) {
+      console.error('Write verification error:', verifyError);
+    }
+    
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Users file written successfully: ${users.length} users`);
+    }
+    return true;
   } catch (error) {
-    console.error('Error writing users:', error);
+    console.error('❌ Error writing users:', error);
     throw error;
   }
 };

@@ -1,6 +1,16 @@
-п# Coffee Rewards - Referral-Based Website
+# Coffee Rewards - Referral-Based Website
 
 A full-stack referral-based platform with VIP investment system, daily rewards, and multi-level commission tracking.
+
+## 📚 Documentation
+
+### Essential Guides:
+- **[PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md)** - Production deployment checklist
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
+- **[DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)** - Database migration guide (⚠️ Required for production)
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Comprehensive testing checklist
+- **[SECURITY_REVIEW.md](./SECURITY_REVIEW.md)** - Security best practices
+- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Complete project overview
 
 ## Features
 
@@ -110,10 +120,24 @@ npm run dev
 
 The app is ready for Vercel deployment with zero configuration.
 
-## Notes
+## ⚠️ Important Notes
 
-- Database uses JSON files stored in `/data` directory
-- For production, consider migrating to a proper database (PostgreSQL, MongoDB, etc.)
+### Production Requirements:
+- **Database Migration Required:** JSON files don't persist on Vercel. See [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+- **Environment Variables:** Must set JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD in production
+- **Security:** Change all default credentials before production deployment
+
+### Quick Start for Production:
+1. Read [PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md)
+2. Follow [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+3. Migrate database using [DATABASE_MIGRATION.md](./DATABASE_MIGRATION.md)
+4. Test using [TESTING_GUIDE.md](./TESTING_GUIDE.md)
+5. Review [SECURITY_REVIEW.md](./SECURITY_REVIEW.md)
+
+## 📋 Development Notes
+
+- Database uses JSON files stored in `/data` directory (development only)
+- For production, **MUST** migrate to a proper database (PostgreSQL, MongoDB, etc.)
 - JWT secret should be changed in production
 - Admin credentials should be changed via environment variables
 

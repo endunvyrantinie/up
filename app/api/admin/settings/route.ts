@@ -39,16 +39,30 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { telegramSupport, telegramChannel, telegramGroup } = body;
+    const { 
+      telegramSupport, 
+      telegramChannel, 
+      telegramGroup,
+      qrDataFormat,
+      qrDarkColor,
+      qrLightColor,
+      qrWidth,
+      qrMargin
+    } = body;
 
-    if (!telegramSupport || !telegramChannel || !telegramGroup) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-    }
+    // Read existing settings to preserve QR settings if not provided
+    const existingSettings = readSettings();
 
     const settings = {
-      telegramSupport: telegramSupport.trim(),
-      telegramChannel: telegramChannel.trim(),
-      telegramGroup: telegramGroup.trim(),
+      telegramSupport: (telegramSupport || existingSettings.telegramSupport || '').trim(),
+      telegramChannel: (telegramChannel || existingSettings.telegramChannel || '').trim(),
+      telegramGroup: (telegramGroup || existingSettings.telegramGroup || '').trim(),
+      // QR Code settings (optional)
+      qrDataFormat: qrDataFormat || existingSettings.qrDataFormat || 'COFFEEPAY-{amount}-{timestamp}',
+      qrDarkColor: qrDarkColor || existingSettings.qrDarkColor || '#8B4513',
+      qrLightColor: qrLightColor || existingSettings.qrLightColor || '#FFFFFF',
+      qrWidth: qrWidth ? parseInt(qrWidth) : (existingSettings.qrWidth || 300),
+      qrMargin: qrMargin ? parseInt(qrMargin) : (existingSettings.qrMargin || 2),
     };
 
     writeSettings(settings);

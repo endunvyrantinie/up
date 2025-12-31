@@ -99,6 +99,14 @@ export default function LoginPage() {
       const data = await res.json();
       
       if (data.success && data.token) {
+        // Verify we have user data
+        if (!data.user || !data.user.id) {
+          console.error('Login response missing user data:', data);
+          setError('Login successful but user data is missing. Please try again.');
+          setLoading(false);
+          return;
+        }
+        
         // Clear ALL existing data first
         localStorage.clear();
         sessionStorage.clear();
@@ -106,8 +114,12 @@ export default function LoginPage() {
         // Small delay to ensure storage is cleared
         await new Promise(resolve => setTimeout(resolve, 50));
         
-        // Set new token
+        // Set new token and user info for debugging
         localStorage.setItem('token', data.token);
+        if (data.user) {
+          localStorage.setItem('userId', data.user.id); // Store user ID for debugging
+        }
+        
         if (data.user?.isAdmin) {
           localStorage.setItem('adminToken', data.token);
           // Use window.location for admin to ensure clean redirect

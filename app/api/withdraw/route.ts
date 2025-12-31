@@ -48,17 +48,22 @@ export async function POST(request: NextRequest) {
     user.totalWithdrawn += amount;
     writeUsers(users);
 
-    // Generate QR Code
+    // Generate QR Code with transaction info
+    const transactionId = Date.now().toString();
     let qrCodeDataURL = '';
     try {
-      qrCodeDataURL = await generateQRCode(amount);
+      qrCodeDataURL = await generateQRCode(amount, {
+        userId: user.id,
+        transactionId: transactionId,
+        type: 'withdrawal',
+      });
     } catch (error) {
       console.error('QR generation failed, continuing without QR');
     }
 
     const transactions = readTransactions();
     transactions.push({
-      id: Date.now().toString(),
+      id: transactionId,
       userId: user.id,
       type: 'withdrawal',
       amount,

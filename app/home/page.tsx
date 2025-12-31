@@ -33,31 +33,49 @@ function HomeContent() {
     }
   }, []);
 
-  const fetchUser = async () => {
+  const fetchUser = async (retryCount = 0) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('No token found, redirecting to login');
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No token found, redirecting to login');
+        }
         router.push('/login');
         return;
       }
       
       const res = await fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store', // Prevent caching issues
       });
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        console.error('Auth check failed:', { 
-          status: res.status, 
-          error: errorData.error,
-          token: token.substring(0, 20) + '...'
-        });
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Auth check failed:', { 
+            status: res.status, 
+            error: errorData.error,
+            code: errorData.code,
+            retryCount
+          });
+        }
         
-        // Token invalid or expired, or user not found
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminToken');
-        router.push('/login');
+        // If it's a "user not found" error and we haven't retried, try once more
+        if (errorData.code === 'USER_NOT_FOUND' && retryCount < 1) {
+          console.log('Retrying user fetch...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          return fetchUser(retryCount + 1);
+        }
+        
+        // Token invalid or expired, or user not found after retry
+        // Only logout if it's a 401 (unauthorized) or after retry failed
+        if (res.status === 401 || retryCount >= 1) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('adminToken');
+          router.push('/login');
+        }
         return;
       }
       
@@ -71,12 +89,23 @@ function HomeContent() {
         });
       } else {
         console.error('No user data in response:', data);
+        // Retry once if no user data
+        if (retryCount < 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchUser(retryCount + 1);
+        }
         localStorage.removeItem('token');
         localStorage.removeItem('adminToken');
         router.push('/login');
       }
     } catch (error) {
       console.error('Fetch user error:', error);
+      // Retry once on network errors
+      if (retryCount < 1) {
+        console.log('Retrying after network error...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return fetchUser(retryCount + 1);
+      }
       localStorage.removeItem('token');
       localStorage.removeItem('adminToken');
       router.push('/login');

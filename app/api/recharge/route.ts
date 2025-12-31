@@ -30,16 +30,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // For MVP: create pending transaction (not immediately added to wallet)
+    const transactions = readTransactions();
+    const transactionId = Date.now().toString();
+    
     // Generate QR code for payment with transaction info
     const qrCode = await generateQRCode(amount, {
       userId: user.id,
       transactionId: transactionId,
       type: 'recharge',
     });
-
-    // For MVP: create pending transaction (not immediately added to wallet)
-    const transactions = readTransactions();
-    const transactionId = Date.now().toString();
     transactions.push({
       id: transactionId,
       userId: user.id,

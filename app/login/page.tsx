@@ -61,10 +61,10 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      // Normalize phone number (remove spaces, dashes, etc.)
-      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
+      // Normalize phone number (remove all non-digit characters except +)
+      const normalizedPhone = formData.phone.replace(/[^\d]/g, '');
       
-      // Combine country code and phone number
+      // Combine country code and phone number (country code already has +)
       const fullPhoneNumber = formData.countryCode + normalizedPhone;
       
       // Basic validation: phone should have at least 5 digits

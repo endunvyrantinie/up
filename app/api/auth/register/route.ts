@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Phone number and password are required' }, { status: 400 });
     }
 
-    // Normalize phone number (remove spaces, dashes, etc.)
-    const normalizedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
+    // Normalize phone number (remove all non-digit characters except +)
+    const normalizedPhone = phone.replace(/[^\d+]/g, '');
 
     const users = readUsers();
     const { findUserByPhone } = await import('@/lib/db');
@@ -25,8 +25,16 @@ export async function POST(request: NextRequest) {
     
     // Also check in all users for any format match
     const existingUser = users.find(u => {
-      const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
-      return userPhone === normalizedPhone || u.phone === phone || u.phone === normalizedPhone;
+      const userPhone = (u.phone || '').replace(/[^\d+]/g, '');
+      const userUsername = (u.username || '').replace(/[^\d+]/g, '');
+      return userPhone === normalizedPhone || 
+             userPhone === phone || 
+             userPhone === normalizedPhone ||
+             userUsername === normalizedPhone ||
+             userUsername === phone ||
+             // Try without + prefix
+             userPhone.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '') ||
+             userUsername.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '');
     });
     
     if (existingUser) {

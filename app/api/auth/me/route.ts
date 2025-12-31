@@ -26,7 +26,12 @@ export async function GET(request: NextRequest) {
 
     const user = findUserById(decoded.userId);
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      console.error('User not found in /api/auth/me:', { 
+        userId: decoded.userId, 
+        isAdmin: decoded.isAdmin,
+        totalUsers: (await import('@/lib/db')).readUsers().length
+      });
+      return NextResponse.json({ error: 'User not found. Please login again.' }, { status: 404 });
     }
 
     const referralCount = getReferralCount(user.id);

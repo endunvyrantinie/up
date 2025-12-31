@@ -37,6 +37,7 @@ function HomeContent() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        console.log('No token found, redirecting to login');
         router.push('/login');
         return;
       }
@@ -46,7 +47,14 @@ function HomeContent() {
       });
       
       if (!res.ok) {
-        // Token invalid or expired
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Auth check failed:', { 
+          status: res.status, 
+          error: errorData.error,
+          token: token.substring(0, 20) + '...'
+        });
+        
+        // Token invalid or expired, or user not found
         localStorage.removeItem('token');
         localStorage.removeItem('adminToken');
         router.push('/login');
@@ -62,6 +70,7 @@ function HomeContent() {
           totalIncome: data.user.totalEarned || 0,
         });
       } else {
+        console.error('No user data in response:', data);
         localStorage.removeItem('token');
         localStorage.removeItem('adminToken');
         router.push('/login');

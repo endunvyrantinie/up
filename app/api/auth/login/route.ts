@@ -34,21 +34,44 @@ export async function POST(request: NextRequest) {
 
     // User login - try phone first, then email for backward compatibility
     try {
-      // Normalize phone number (remove spaces, dashes, etc.)
-      const normalizedPhone = loginIdentifier.replace(/\s+/g, '').replace(/-/g, '');
+      // Normalize phone number (remove all non-digit characters except +)
+      const normalizedPhone = loginIdentifier.replace(/[^\d+]/g, '');
       
-      let user = findUserByPhone(normalizedPhone);
+      // Read all users once
+      const { readUsers } = await import('@/lib/db');
+      const allUsers = readUsers();
+      
+      console.log('Login attempt:', { 
+        loginIdentifier, 
+        normalizedPhone, 
+        totalUsers: allUsers.length,
+        samplePhones: allUsers.slice(0, 3).map(u => u.phone)
+      });
+      
+      // Try multiple matching strategies
+      let user = allUsers.find(u => {
+        // Normalize stored phone numbers
+        const userPhone = (u.phone || '').replace(/[^\d+]/g, '');
+        const userUsername = (u.username || '').replace(/[^\d+]/g, '');
+        
+        // Try exact matches
+        return userPhone === normalizedPhone || 
+               userPhone === loginIdentifier ||
+               userUsername === normalizedPhone ||
+               userUsername === loginIdentifier ||
+               u.phone === loginIdentifier ||
+               u.username === loginIdentifier ||
+               // Try without + prefix
+               userPhone.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '') ||
+               userUsername.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '');
+      });
+      
+      // If still not found, try with findUserByPhone (for backward compatibility)
       if (!user) {
-        // Try with original format
-        user = findUserByPhone(loginIdentifier);
+        user = findUserByPhone(normalizedPhone);
       }
       if (!user) {
-        // Try finding by partial phone match (in case of formatting differences)
-        const users = await import('@/lib/db').then(m => m.readUsers());
-        user = users.find(u => {
-          const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
-          return userPhone === normalizedPhone || userPhone === loginIdentifier || u.phone === loginIdentifier;
-        }) || undefined;
+        user = findUserByPhone(loginIdentifier);
       }
       if (!user) {
         // Fallback to email for existing users
@@ -56,8 +79,12 @@ export async function POST(request: NextRequest) {
       }
       
       if (!user) {
-        console.error('Login failed: User not found for identifier:', loginIdentifier);
-        return NextResponse.json({ error: 'Invalid phone number or password' }, { status: 401 });
+        console.error('Login failed: User not found', { 
+          loginIdentifier, 
+          normalizedPhone,
+          availablePhones: allUsers.map(u => u.phone).slice(0, 5)
+        });
+        return NextResponse.json({ error: 'User not found. Please check your phone number or register first.' }, { status: 401 });
       }
 
       const isValid = await comparePassword(password, user.password);

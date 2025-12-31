@@ -71,8 +71,8 @@ function RegisterContent() {
     }
 
     try {
-      // Normalize phone number (remove spaces, dashes, etc.)
-      const normalizedPhone = formData.phone.replace(/\s+/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
+      // Normalize phone number (remove all non-digit characters)
+      const normalizedPhone = formData.phone.replace(/[^\d]/g, '');
       
       // Combine country code and phone number
       const fullPhoneNumber = formData.countryCode + normalizedPhone;

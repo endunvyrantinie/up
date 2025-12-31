@@ -295,18 +295,23 @@ export const findUserByEmail = (email: string): User | undefined => {
 
 export const findUserByPhone = (phone: string): User | undefined => {
   const users = readUsers();
-  // Normalize phone for comparison
-  const normalizedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
+  // Normalize phone for comparison - remove all non-digit characters except +
+  const normalizedPhone = phone.replace(/[^\d+]/g, '');
   
   return users.find(u => {
-    const userPhone = (u.phone || '').replace(/\s+/g, '').replace(/-/g, '');
-    const userUsername = (u.username || '').replace(/\s+/g, '').replace(/-/g, '');
+    const userPhone = (u.phone || '').replace(/[^\d+]/g, '');
+    const userUsername = (u.username || '').replace(/[^\d+]/g, '');
+    
+    // Try multiple matching strategies
     return userPhone === normalizedPhone || 
            userPhone === phone || 
            userUsername === normalizedPhone || 
            userUsername === phone ||
            u.phone === phone ||
-           u.username === phone;
+           u.username === phone ||
+           // Try without + prefix
+           userPhone.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '') ||
+           userUsername.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '');
   });
 };
 

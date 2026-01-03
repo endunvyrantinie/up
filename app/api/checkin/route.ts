@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { findUserById, readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { findUserById, updateUser, createTransaction } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const users = readUsers();
-    const user = users.find(u => u.id === decoded.userId);
+    const user = await findUserById(decoded.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -32,36 +31,41 @@ export async function POST(request: NextRequest) {
 
     // Daily reward: RM 0.50
     const reward = 0.50;
-
-    user.balance += reward;
-    user.totalEarned += reward;
-    user.dailyRewardsBalance = (user.dailyRewardsBalance || 0) + reward;
-    user.dailyRewardsTotal = (user.dailyRewardsTotal || 0) + reward;
-    user.lastCheckIn = new Date().toISOString();
     const streak = user.checkInStreak || 0;
-    user.checkInStreak = lastCheckIn && new Date(today) > new Date(lastCheckIn + 'T00:00:00') && 
+    const newStreak = lastCheckIn && new Date(today) > new Date(lastCheckIn + 'T00:00:00') && 
       (new Date(today).getTime() - new Date(lastCheckIn + 'T00:00:00').getTime()) < 2 * 24 * 60 * 60 * 1000
       ? streak + 1 : 1;
 
-    writeUsers(users);
+    // Update user
+    const updatedUser = await updateUser(user.id, {
+      balance: user.balance + reward,
+      totalEarned: user.totalEarned + reward,
+      dailyRewardsBalance: (user.dailyRewardsBalance || 0) + reward,
+      dailyRewardsTotal: (user.dailyRewardsTotal || 0) + reward,
+      lastCheckIn: new Date().toISOString(),
+      checkInStreak: newStreak,
+    });
 
-    const transactions = readTransactions();
-    transactions.push({
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    }
+
+    // Create transaction
+    await createTransaction({
       id: Date.now().toString(),
       userId: user.id,
       type: 'daily_reward',
       amount: reward,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: `Daily check-in reward (Streak: ${user.checkInStreak})`,
+      description: `Daily check-in reward (Streak: ${newStreak})`,
     });
-    writeTransactions(transactions);
 
     return NextResponse.json({ 
       success: true, 
       reward,
-      streak: user.checkInStreak,
-      balance: user.balance 
+      streak: newStreak,
+      balance: updatedUser.balance 
     });
   } catch (error) {
     console.error('Check-in error:', error);

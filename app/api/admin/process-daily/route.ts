@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readVIPPurchases, writeVIPPurchases, readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { readVIPPurchases, readUsers, updateVIPPurchase, updateUser, createTransaction } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +17,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const purchases = readVIPPurchases();
-    const users = readUsers();
-    const transactions = readTransactions();
+    const purchases = await readVIPPurchases();
+    const users = await readUsers();
     const now = new Date();
 
     let processedCount = 0;
@@ -31,17 +30,21 @@ export async function POST(request: NextRequest) {
       
       // Check if purchase is still active
       if (expiresAt > now && purchase.daysRemaining > 0) {
-        const user = users.find(u => u.id === purchase.userId);
+        const user = users.find((u: any) => u.id === purchase.userId);
         if (user) {
           // Add daily return to user balance
-          user.balance += purchase.dailyReturn;
-          user.totalEarned += purchase.dailyReturn;
+          await updateUser(user.id, {
+            balance: user.balance + purchase.dailyReturn,
+            totalEarned: user.totalEarned + purchase.dailyReturn,
+          });
           
           // Decrease days remaining
-          purchase.daysRemaining -= 1;
+          await updateVIPPurchase(purchase.id, {
+            daysRemaining: purchase.daysRemaining - 1,
+          });
           
           // Create transaction record
-          transactions.push({
+          await createTransaction({
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             userId: user.id,
             type: 'vip_return',
@@ -57,10 +60,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    writeVIPPurchases(purchases);
-    writeUsers(users);
-    writeTransactions(transactions);
-
     return NextResponse.json({
       success: true,
       message: `Processed ${processedCount} VIP purchases. Total amount: RM ${totalAmount.toFixed(2)}`,
@@ -72,4 +71,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to process daily returns' }, { status: 500 });
   }
 }
-

@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const channels = readPaymentChannels().filter(c => c.isActive);
-    return NextResponse.json({ channels });
+    const channels = await readPaymentChannels();
+    const activeChannels = channels.filter(c => c.isActive);
+    return NextResponse.json({ channels: activeChannels });
   } catch (error) {
     console.error('Error fetching payment channels:', error);
     return NextResponse.json({ error: 'Failed to fetch payment channels' }, { status: 500 });
   }
 }
-

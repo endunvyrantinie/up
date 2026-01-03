@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { findUserById, readUsers, writeUsers } from '@/lib/db';
+import { findUserById, updateUser } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +17,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const users = readUsers();
-    const user = users.find(u => u.id === decoded.userId);
+    const user = await findUserById(decoded.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    user.hasSeenInfoModal = true;
-    writeUsers(users);
+    await updateUser(user.id, {
+      hasSeenInfoModal: true,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -32,4 +32,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
-

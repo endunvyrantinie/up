@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readPaymentChannels, writePaymentChannels, PaymentChannel } from '@/lib/db';
+import { readPaymentChannels, createPaymentChannel, updatePaymentChannel, deletePaymentChannel, PaymentChannel } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const channels = readPaymentChannels();
+    const channels = await readPaymentChannels();
     return NextResponse.json({ channels });
   } catch (error) {
     console.error('Error fetching payment channels:', error);
@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const channels = readPaymentChannels();
     const newChannel: PaymentChannel = {
       id: Date.now().toString(),
       name,
@@ -55,10 +54,9 @@ export async function POST(request: NextRequest) {
       isActive: isActive !== undefined ? isActive : true,
     };
 
-    channels.push(newChannel);
-    writePaymentChannels(channels);
+    const createdChannel = await createPaymentChannel(newChannel);
 
-    return NextResponse.json({ success: true, channel: newChannel });
+    return NextResponse.json({ success: true, channel: createdChannel });
   } catch (error: any) {
     console.error('Error creating payment channel:', error);
     return NextResponse.json({ error: error?.message || 'Failed to create payment channel' }, { status: 500 });
@@ -85,25 +83,26 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Channel ID is required' }, { status: 400 });
     }
 
-    const channels = readPaymentChannels();
-    const index = channels.findIndex(c => c.id === id);
+    const channels = await readPaymentChannels();
+    const existingChannel = channels.find((c: any) => c.id === id);
 
-    if (index === -1) {
+    if (!existingChannel) {
       return NextResponse.json({ error: 'Channel not found' }, { status: 404 });
     }
 
-    channels[index] = {
-      ...channels[index],
-      name: name || channels[index].name,
-      type: type || channels[index].type,
-      details: details || channels[index].details,
-      instructions: instructions !== undefined ? instructions : channels[index].instructions,
-      isActive: isActive !== undefined ? isActive : channels[index].isActive,
-    };
+    const updatedChannel = await updatePaymentChannel(id, {
+      name: name || existingChannel.name,
+      type: type || existingChannel.type,
+      details: details || existingChannel.details,
+      instructions: instructions !== undefined ? instructions : existingChannel.instructions,
+      isActive: isActive !== undefined ? isActive : existingChannel.isActive,
+    });
 
-    writePaymentChannels(channels);
+    if (!updatedChannel) {
+      return NextResponse.json({ error: 'Failed to update channel' }, { status: 500 });
+    }
 
-    return NextResponse.json({ success: true, channel: channels[index] });
+    return NextResponse.json({ success: true, channel: updatedChannel });
   } catch (error: any) {
     console.error('Error updating payment channel:', error);
     return NextResponse.json({ error: error?.message || 'Failed to update payment channel' }, { status: 500 });
@@ -130,14 +129,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Channel ID is required' }, { status: 400 });
     }
 
-    const channels = readPaymentChannels();
-    const filtered = channels.filter(c => c.id !== id);
+    const success = await deletePaymentChannel(id);
 
-    if (filtered.length === channels.length) {
-      return NextResponse.json({ error: 'Channel not found' }, { status: 404 });
+    if (!success) {
+      return NextResponse.json({ error: 'Channel not found or failed to delete' }, { status: 404 });
     }
-
-    writePaymentChannels(filtered);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -145,4 +141,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Failed to delete payment channel' }, { status: 500 });
   }
 }
-

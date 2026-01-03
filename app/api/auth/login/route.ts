@@ -37,47 +37,14 @@ export async function POST(request: NextRequest) {
       // Normalize phone number (remove all non-digit characters except +)
       const normalizedPhone = loginIdentifier.replace(/[^\d+]/g, '');
       
-      // Read all users once
-      const { readUsers } = await import('@/lib/db');
-      const allUsers = readUsers();
-      
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Login attempt:', { 
-          loginIdentifier, 
-          normalizedPhone, 
-          totalUsers: allUsers.length,
-        });
-      }
-      
       // Try multiple matching strategies
-      let user = allUsers.find(u => {
-        // Normalize stored phone numbers
-        const userPhone = (u.phone || '').replace(/[^\d+]/g, '');
-        const userUsername = (u.username || '').replace(/[^\d+]/g, '');
-        
-        // Try exact matches
-        return userPhone === normalizedPhone || 
-               userPhone === loginIdentifier ||
-               userUsername === normalizedPhone ||
-               userUsername === loginIdentifier ||
-               u.phone === loginIdentifier ||
-               u.username === loginIdentifier ||
-               // Try without + prefix
-               userPhone.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '') ||
-               userUsername.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '');
-      });
-      
-      // If still not found, try with findUserByPhone (for backward compatibility)
+      let user = await findUserByPhone(normalizedPhone);
       if (!user) {
-        user = findUserByPhone(normalizedPhone);
-      }
-      if (!user) {
-        user = findUserByPhone(loginIdentifier);
+        user = await findUserByPhone(loginIdentifier);
       }
       if (!user) {
         // Fallback to email for existing users
-        user = findUserByEmail(loginIdentifier);
+        user = await findUserByEmail(loginIdentifier);
       }
       
       if (!user) {

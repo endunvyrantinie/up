@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { findUserById, readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { findUserById, readSettings, createTransaction, updateUser } from '@/lib/db';
 import { generateQRCode } from '@/lib/qrCode';
 
 export const dynamic = 'force-dynamic';
@@ -24,8 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const users = readUsers();
-    const user = users.find(u => u.id === decoded.userId);
+    const user = await findUserById(decoded.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -44,25 +43,40 @@ export async function POST(request: NextRequest) {
     const tax = amount * 0.16;
     const amountAfterTax = amount - tax;
 
-    user.balance -= amount;
-    user.totalWithdrawn += amount;
-    writeUsers(users);
+    // Update user balance
+    const updatedUser = await updateUser(user.id, {
+      balance: user.balance - amount,
+      totalWithdrawn: user.totalWithdrawn + amount,
+    });
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Failed to update user balance' }, { status: 500 });
+    }
 
     // Generate QR Code with transaction info
     const transactionId = Date.now().toString();
     let qrCodeDataURL = '';
-    try {
-      qrCodeDataURL = await generateQRCode(amount, {
-        userId: user.id,
-        transactionId: transactionId,
-        type: 'withdrawal',
-      });
-    } catch (error) {
-      console.error('QR generation failed, continuing without QR');
+    
+    // Check if uploaded QR code exists, otherwise generate one
+    const settings = await readSettings();
+    
+    if (settings.uploadedQRCode) {
+      // Use uploaded QR code
+      qrCodeDataURL = settings.uploadedQRCode;
+    } else {
+      // Generate QR code
+      try {
+        qrCodeDataURL = await generateQRCode(amount, {
+          userId: user.id,
+          transactionId: transactionId,
+          type: 'withdrawal',
+        });
+      } catch (error) {
+        console.error('QR generation failed, continuing without QR');
+      }
     }
 
-    const transactions = readTransactions();
-    transactions.push({
+    await createTransaction({
       id: transactionId,
       userId: user.id,
       type: 'withdrawal',
@@ -74,12 +88,11 @@ export async function POST(request: NextRequest) {
       description: `Withdrawal request - ${paymentMethod || 'N/A'}`,
       qrCode: qrCodeDataURL,
     });
-    writeTransactions(transactions);
 
     return NextResponse.json({ 
       success: true, 
       message: 'Withdrawal request submitted. Processing will take 24 hours.',
-      balance: user.balance,
+      balance: updatedUser.balance,
       qrCode: qrCodeDataURL,
     });
   } catch (error) {

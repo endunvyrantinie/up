@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { readTransactions, updateTransaction } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction ID is required' }, { status: 400 });
     }
 
-    const transactions = readTransactions();
-    const transaction = transactions.find(t => t.id === transactionId);
+    const transactions = await readTransactions();
+    const transaction = transactions.find((t: any) => t.id === transactionId);
 
     if (!transaction) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
@@ -39,20 +39,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Update transaction status
-    transaction.status = 'approved';
-    transaction.approveDate = new Date().toISOString();
-    writeTransactions(transactions);
+    const updatedTransaction = await updateTransaction(transactionId, {
+      status: 'approved',
+      approveDate: new Date().toISOString(),
+    });
 
-    // Note: The amount was already deducted from user balance when withdrawal was requested
-    // So we don't need to deduct again. The transaction is now approved and will be processed.
+    if (!updatedTransaction) {
+      return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });
+    }
 
     return NextResponse.json({ 
       success: true, 
       message: 'Withdrawal approved successfully',
       transaction: {
-        id: transaction.id,
-        status: transaction.status,
-        approveDate: transaction.approveDate,
+        id: updatedTransaction.id,
+        status: updatedTransaction.status,
+        approveDate: updatedTransaction.approveDate,
       }
     });
   } catch (error: any) {
@@ -60,4 +62,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to approve withdrawal' }, { status: 500 });
   }
 }
-

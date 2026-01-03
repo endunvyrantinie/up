@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readBankAccounts, writeBankAccounts, BankAccount } from '@/lib/db';
+import { readBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const accounts = readBankAccounts();
+    const accounts = await readBankAccounts();
     return NextResponse.json({ accounts });
   } catch (error) {
     console.error('Error fetching bank accounts:', error);
@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const accounts = readBankAccounts();
     const newAccount: BankAccount = {
       id: Date.now().toString(),
       name,
@@ -56,10 +55,9 @@ export async function POST(request: NextRequest) {
       isActive: isActive !== undefined ? isActive : true,
     };
 
-    accounts.push(newAccount);
-    writeBankAccounts(accounts);
+    const createdAccount = await createBankAccount(newAccount);
 
-    return NextResponse.json({ success: true, account: newAccount });
+    return NextResponse.json({ success: true, account: createdAccount });
   } catch (error: any) {
     console.error('Error creating bank account:', error);
     return NextResponse.json({ error: error?.message || 'Failed to create bank account' }, { status: 500 });
@@ -86,26 +84,27 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
     }
 
-    const accounts = readBankAccounts();
-    const index = accounts.findIndex(a => a.id === id);
+    const accounts = await readBankAccounts();
+    const existingAccount = accounts.find((a) => a.id === id);
 
-    if (index === -1) {
+    if (!existingAccount) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
-    accounts[index] = {
-      ...accounts[index],
-      name: name || accounts[index].name,
-      bank: bank || accounts[index].bank,
-      account: account || accounts[index].account,
-      accountHolder: accountHolder || accounts[index].accountHolder,
-      swift: swift !== undefined ? swift : accounts[index].swift,
-      isActive: isActive !== undefined ? isActive : accounts[index].isActive,
-    };
+    const updatedAccount = await updateBankAccount(id, {
+      name: name || existingAccount.name,
+      bank: bank || existingAccount.bank,
+      account: account || existingAccount.account,
+      accountHolder: accountHolder || existingAccount.accountHolder,
+      swift: swift !== undefined ? swift : existingAccount.swift,
+      isActive: isActive !== undefined ? isActive : existingAccount.isActive,
+    });
 
-    writeBankAccounts(accounts);
+    if (!updatedAccount) {
+      return NextResponse.json({ error: 'Failed to update account' }, { status: 500 });
+    }
 
-    return NextResponse.json({ success: true, account: accounts[index] });
+    return NextResponse.json({ success: true, account: updatedAccount });
   } catch (error: any) {
     console.error('Error updating bank account:', error);
     return NextResponse.json({ error: error?.message || 'Failed to update bank account' }, { status: 500 });
@@ -132,14 +131,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
     }
 
-    const accounts = readBankAccounts();
-    const filtered = accounts.filter(a => a.id !== id);
+    const success = await deleteBankAccount(id);
 
-    if (filtered.length === accounts.length) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    if (!success) {
+      return NextResponse.json({ error: 'Account not found or failed to delete' }, { status: 404 });
     }
-
-    writeBankAccounts(filtered);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -147,4 +143,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Failed to delete bank account' }, { status: 500 });
   }
 }
-

@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readUsers, writeUsers, readReferrals, writeReferrals, readTransactions, writeTransactions, readVIPPurchases, writeVIPPurchases, VIPPurchase } from '@/lib/db';
+import { 
+  findUserById, 
+  updateUser, 
+  readReferrals, 
+  updateReferral, 
+  createTransaction, 
+  createVIPPurchase,
+  readVIPPurchases,
+  findUserByReferralCode,
+  createReferral
+} from '@/lib/db';
+import { VIPPurchase } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const users = readUsers();
-    const user = users.find(u => u.id === decoded.userId);
+    const user = await findUserById(decoded.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -40,10 +50,6 @@ export async function POST(request: NextRequest) {
     if (user.balance < amount) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
-
-    // Deduct amount from wallet
-    user.balance -= amount;
-    user.totalInvested = (user.totalInvested || 0) + amount;
 
     // Create VIP purchase/investment
     const createdAt = new Date().toISOString();
@@ -60,33 +66,39 @@ export async function POST(request: NextRequest) {
       expiresAt,
     };
 
-    const purchases = readVIPPurchases();
-    purchases.push(purchase);
-    writeVIPPurchases(purchases);
+    await createVIPPurchase(purchase);
 
-    // Update user VIP level based on total investment
-    const userPurchases = purchases.filter(p => p.userId === user.id);
-    const totalInvestment = userPurchases.reduce((sum, p) => sum + p.amount, 0);
-    user.vipLevel = getVIPLevel(totalInvestment);
-    user.totalEarned += amount;
-    writeUsers(users);
+    // Get all user purchases to calculate total investment
+    const purchases = await readVIPPurchases();
+    const userPurchases = purchases.filter((p: VIPPurchase) => p.userId === user.id);
+    const totalInvestment = userPurchases.reduce((sum: number, p: VIPPurchase) => sum + p.amount, 0);
+    const newVIPLevel = getVIPLevel(totalInvestment);
+
+    // Update user
+    await updateUser(user.id, {
+      balance: user.balance - amount,
+      totalInvested: (user.totalInvested || 0) + amount,
+      vipLevel: newVIPLevel,
+      totalEarned: user.totalEarned + amount,
+    });
 
     // Calculate and distribute commissions to referrers
-    const referrals = readReferrals();
-    const transactions = readTransactions();
+    const referrals = await readReferrals();
     
     if (user.referredBy) {
-      const level1Ref = referrals.find(r => r.referredId === user.id && r.level === 1);
+      const level1Ref = referrals.find((r: any) => r.referredId === user.id && r.level === 1);
       if (level1Ref) {
-        const level1User = users.find(u => u.id === level1Ref.referrerId);
+        const level1User = await findUserById(level1Ref.referrerId);
         if (level1User) {
           // Level 1: 28% commission
           const commission = amount * 0.28;
-          level1Ref.commission += commission;
-          level1User.balance += commission;
-          level1User.totalEarned += commission;
+          await updateReferral(level1Ref.id, { commission: level1Ref.commission + commission });
+          await updateUser(level1User.id, {
+            balance: level1User.balance + commission,
+            totalEarned: level1User.totalEarned + commission,
+          });
           
-          transactions.push({
+          await createTransaction({
             id: Date.now().toString(),
             userId: level1User.id,
             type: 'commission',
@@ -98,17 +110,19 @@ export async function POST(request: NextRequest) {
 
           // Level 2 commission
           if (level1User.referredBy) {
-            const level2Ref = referrals.find(r => r.referredId === user.id && r.level === 2);
+            const level2Ref = referrals.find((r: any) => r.referredId === user.id && r.level === 2);
             if (level2Ref) {
-              const level2User = users.find(u => u.id === level2Ref.referrerId);
+              const level2User = await findUserById(level2Ref.referrerId);
               if (level2User) {
                 // Level 2: 1% commission
                 const commission2 = amount * 0.01;
-                level2Ref.commission += commission2;
-                level2User.balance += commission2;
-                level2User.totalEarned += commission2;
+                await updateReferral(level2Ref.id, { commission: level2Ref.commission + commission2 });
+                await updateUser(level2User.id, {
+                  balance: level2User.balance + commission2,
+                  totalEarned: level2User.totalEarned + commission2,
+                });
                 
-                transactions.push({
+                await createTransaction({
                   id: (Date.now() + 1).toString(),
                   userId: level2User.id,
                   type: 'commission',
@@ -120,17 +134,19 @@ export async function POST(request: NextRequest) {
 
                 // Level 3 commission
                 if (level2User.referredBy) {
-                  const level3Ref = referrals.find(r => r.referredId === user.id && r.level === 3);
+                  const level3Ref = referrals.find((r: any) => r.referredId === user.id && r.level === 3);
                   if (level3Ref) {
-                    const level3User = users.find(u => u.id === level3Ref.referrerId);
+                    const level3User = await findUserById(level3Ref.referrerId);
                     if (level3User) {
                       // Level 3: 1% commission
                       const commission3 = amount * 0.01;
-                      level3Ref.commission += commission3;
-                      level3User.balance += commission3;
-                      level3User.totalEarned += commission3;
+                      await updateReferral(level3Ref.id, { commission: level3Ref.commission + commission3 });
+                      await updateUser(level3User.id, {
+                        balance: level3User.balance + commission3,
+                        totalEarned: level3User.totalEarned + commission3,
+                      });
                       
-                      transactions.push({
+                      await createTransaction({
                         id: (Date.now() + 2).toString(),
                         userId: level3User.id,
                         type: 'commission',
@@ -149,14 +165,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    writeReferrals(referrals);
-    writeUsers(users);
-    writeTransactions(transactions);
-
     return NextResponse.json({ success: true, purchase });
   } catch (error) {
     console.error('VIP purchase error:', error);
     return NextResponse.json({ error: 'Purchase failed' }, { status: 500 });
   }
 }
-

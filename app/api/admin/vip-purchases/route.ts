@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const purchases = readVIPPurchases();
-    const users = readUsers();
+    const purchases = await readVIPPurchases();
+    const users = await readUsers();
 
     // Add user info to purchases
-    const purchasesWithUser = purchases.map(purchase => {
-      const user = users.find(u => u.id === purchase.userId);
+    const purchasesWithUser = purchases.map((purchase: any) => {
+      const user = users.find((u: any) => u.id === purchase.userId);
       return {
         ...purchase,
         username: user?.username || 'Unknown',
@@ -36,4 +36,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch VIP purchases' }, { status: 500 });
   }
 }
-

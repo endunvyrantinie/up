@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, generateReferralCode } from '@/lib/auth';
-import { readUsers, writeUsers, findUserByPhone, findUserByReferralCode, findUserById, readReferrals, writeReferrals } from '@/lib/db';
+import { findUserByPhone, findUserByReferralCode, findUserById, readReferrals, writeReferrals, createUser, createReferral } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,30 +14,12 @@ export async function POST(request: NextRequest) {
 
     // Normalize phone number (remove all non-digit characters except +)
     const normalizedPhone = phone.replace(/[^\d+]/g, '');
-
-    const users = readUsers();
-    const { findUserByPhone } = await import('@/lib/db');
     
     // Check if phone already exists (try normalized and original)
-    if (findUserByPhone(normalizedPhone) || findUserByPhone(phone)) {
-      return NextResponse.json({ error: 'Phone number already exists' }, { status: 400 });
-    }
+    const existingUser1 = await findUserByPhone(normalizedPhone);
+    const existingUser2 = await findUserByPhone(phone);
     
-    // Also check in all users for any format match
-    const existingUser = users.find(u => {
-      const userPhone = (u.phone || '').replace(/[^\d+]/g, '');
-      const userUsername = (u.username || '').replace(/[^\d+]/g, '');
-      return userPhone === normalizedPhone || 
-             userPhone === phone || 
-             userPhone === normalizedPhone ||
-             userUsername === normalizedPhone ||
-             userUsername === phone ||
-             // Try without + prefix
-             userPhone.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '') ||
-             userUsername.replace(/^\+/, '') === normalizedPhone.replace(/^\+/, '');
-    });
-    
-    if (existingUser) {
+    if (existingUser1 || existingUser2) {
       return NextResponse.json({ error: 'Phone number already exists' }, { status: 400 });
     }
 
@@ -45,7 +27,7 @@ export async function POST(request: NextRequest) {
     let referralCodeToUse = generateReferralCode();
     
     // Ensure unique referral code
-    while (findUserByReferralCode(referralCodeToUse)) {
+    while (await findUserByReferralCode(referralCodeToUse)) {
       referralCodeToUse = generateReferralCode();
     }
 
@@ -71,44 +53,28 @@ export async function POST(request: NextRequest) {
       checkInStreak: 0,
     };
 
-    users.push(newUser);
-    writeUsers(users);
+    // Create user in MongoDB
+    const createdUser = await createUser(newUser);
     
-    // Verify the user was written (important for serverless environments)
-    let verifyUser = findUserById(newUser.id);
-    if (!verifyUser) {
-      console.error('User registration verification failed - user not found after write, retrying...');
-      // Small delay for file system sync
-      await new Promise(resolve => setTimeout(resolve, 100));
-      // Try writing again
-      writeUsers(users);
-      // Verify again
-      verifyUser = findUserById(newUser.id);
-    }
-    
-    if (verifyUser) {
-      // Only log in development
+    if (createdUser) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ User registered successfully: ${newUser.id} (${newUser.phone || newUser.username})`);
-        console.log(`Total users in database: ${readUsers().length}`);
+        console.log(`✅ User registered successfully: ${createdUser.id} (${createdUser.phone || createdUser.username})`);
       }
     } else {
-      // Always log errors
-      console.error('❌ User registration failed - user still not found after retry');
+      console.error('❌ User registration failed - user not created');
+      return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
     }
 
     // Handle referral commissions if referred
     if (referralCode) {
-      const referrerUser = findUserByReferralCode(referralCode);
+      const referrerUser = await findUserByReferralCode(referralCode);
       if (referrerUser) {
-        const referrals = readReferrals();
-
         // Create referral records for 3 levels
         // Level 1 referral
-        referrals.push({
+        await createReferral({
           id: Date.now().toString(),
           referrerId: referrerUser.id,
-          referredId: newUser.id,
+          referredId: createdUser.id,
           level: 1,
           commission: 0, // Will be calculated when VIP purchase happens
           createdAt: new Date().toISOString(),
@@ -116,12 +82,12 @@ export async function POST(request: NextRequest) {
 
         // Level 2 referral (if referrer has a referrer)
         if (referrerUser.referredBy) {
-          const level2Referrer = findUserByReferralCode(referrerUser.referredBy);
+          const level2Referrer = await findUserByReferralCode(referrerUser.referredBy);
           if (level2Referrer) {
-            referrals.push({
+            await createReferral({
               id: (Date.now() + 1).toString(),
               referrerId: level2Referrer.id,
-              referredId: newUser.id,
+              referredId: createdUser.id,
               level: 2,
               commission: 0,
               createdAt: new Date().toISOString(),
@@ -129,12 +95,12 @@ export async function POST(request: NextRequest) {
 
             // Level 3 referral
             if (level2Referrer.referredBy) {
-              const level3Referrer = findUserByReferralCode(level2Referrer.referredBy);
+              const level3Referrer = await findUserByReferralCode(level2Referrer.referredBy);
               if (level3Referrer) {
-                referrals.push({
+                await createReferral({
                   id: (Date.now() + 2).toString(),
                   referrerId: level3Referrer.id,
-                  referredId: newUser.id,
+                  referredId: createdUser.id,
                   level: 3,
                   commission: 0,
                   createdAt: new Date().toISOString(),
@@ -143,18 +109,16 @@ export async function POST(request: NextRequest) {
             }
           }
         }
-
-        writeReferrals(referrals);
       }
     }
 
     return NextResponse.json({ 
       success: true, 
       user: {
-        id: newUser.id,
-        username: newUser.username,
-        phone: newUser.phone,
-        referralCode: newUser.referralCode,
+        id: createdUser.id,
+        username: createdUser.username,
+        phone: createdUser.phone,
+        referralCode: createdUser.referralCode,
       }
     });
   } catch (error: any) {

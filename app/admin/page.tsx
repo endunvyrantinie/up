@@ -2099,7 +2099,9 @@ function SupportSettingsManager() {
     qrLightColor: '#FFFFFF',
     qrWidth: 300,
     qrMargin: 2,
+    uploadedQRCode: '', // Uploaded QR code (Base64)
   });
+  const [uploadingQR, setUploadingQR] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -2127,6 +2129,7 @@ function SupportSettingsManager() {
           qrLightColor: data.settings.qrLightColor || '#FFFFFF',
           qrWidth: data.settings.qrWidth || 300,
           qrMargin: data.settings.qrMargin || 2,
+          uploadedQRCode: data.settings.uploadedQRCode || '',
         });
       }
     } catch (error) {
@@ -2414,6 +2417,94 @@ function SupportSettingsManager() {
               .replace('{timestamp}', Date.now().toString())
               .replace('{userId}', 'USER123')
               .replace('{type}', 'payment')}
+          </div>
+        </div>
+
+        {/* Upload QR Code Section */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-6 mt-6">
+          <h3 className="text-xl font-bold text-coffee-800 mb-4 flex items-center gap-2">
+            <span className="text-2xl">📤</span>
+            <span>Upload Custom QR Code</span>
+          </h3>
+          <p className="text-sm text-coffee-600 mb-4">
+            Upload your own QR code image. This will be used instead of auto-generated QR codes for recharge and withdrawal.
+          </p>
+
+          {/* Current Uploaded QR Code Preview */}
+          {settings.uploadedQRCode && (
+            <div className="mb-4 p-4 bg-white rounded-xl border-2 border-green-200">
+              <p className="text-sm font-bold text-coffee-800 mb-2">Current QR Code:</p>
+              <div className="flex items-center gap-4">
+                <img 
+                  src={settings.uploadedQRCode} 
+                  alt="Uploaded QR Code" 
+                  className="w-32 h-32 border-2 border-coffee-200 rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    setSettings({ ...settings, uploadedQRCode: '' });
+                    setError('');
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold"
+                >
+                  Remove QR Code
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* File Upload */}
+          <div>
+            <label className="block text-sm font-bold text-coffee-800 mb-2">
+              Select QR Code Image
+            </label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  // Validate file size (max 2MB)
+                  if (file.size > 2 * 1024 * 1024) {
+                    setError('Image size must be less than 2MB');
+                    return;
+                  }
+
+                  setUploadingQR(true);
+                  setError('');
+                  
+                  // Convert to Base64
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const base64String = reader.result as string;
+                    setSettings({ ...settings, uploadedQRCode: base64String });
+                    setUploadingQR(false);
+                    setSuccess('QR code uploaded successfully! Click "Save Settings" to save.');
+                  };
+                  reader.onerror = () => {
+                    setError('Failed to read image file');
+                    setUploadingQR(false);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              disabled={uploadingQR}
+              className="w-full px-4 py-3 border-2 border-coffee-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-coffee-600 mt-2">
+              Supported formats: PNG, JPG, GIF, WebP (Max 2MB)
+            </p>
+            {uploadingQR && (
+              <p className="text-sm text-blue-600 mt-2">⏳ Uploading...</p>
+            )}
+          </div>
+
+          {/* Info Note */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-800">
+              <strong>Note:</strong> If you upload a QR code, it will be used for all recharge and withdrawal transactions. 
+              If you remove it, the system will generate QR codes automatically.
+            </p>
           </div>
         </div>
       </div>

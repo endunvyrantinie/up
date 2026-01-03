@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { readUsers, updateUser, createTransaction } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,17 +24,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const users = readUsers();
+    const users = await readUsers();
     const bonusAmount = parseFloat(amount);
-    const transactions = readTransactions();
 
     // Add bonus to all users
     for (const user of users) {
-      user.balance = (user.balance || 0) + bonusAmount;
-      user.totalEarned = (user.totalEarned || 0) + bonusAmount;
+      await updateUser(user.id, {
+        balance: (user.balance || 0) + bonusAmount,
+        totalEarned: (user.totalEarned || 0) + bonusAmount,
+      });
 
       // Create transaction record
-      transactions.push({
+      await createTransaction({
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         userId: user.id,
         type: 'commission',
@@ -44,9 +45,6 @@ export async function POST(request: NextRequest) {
         description: reason || `Bulk bonus: RM ${bonusAmount.toFixed(2)}`,
       });
     }
-
-    writeUsers(users);
-    writeTransactions(transactions);
 
     return NextResponse.json({
       success: true,
@@ -60,4 +58,3 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 }
-

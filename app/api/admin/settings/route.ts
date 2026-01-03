@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const settings = readSettings();
+    const settings = await readSettings();
     return NextResponse.json({ settings });
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -47,11 +47,12 @@ export async function PUT(request: NextRequest) {
       qrDarkColor,
       qrLightColor,
       qrWidth,
-      qrMargin
+      qrMargin,
+      uploadedQRCode
     } = body;
 
     // Read existing settings to preserve QR settings if not provided
-    const existingSettings = readSettings();
+    const existingSettings = await readSettings();
 
     const settings = {
       telegramSupport: (telegramSupport || existingSettings.telegramSupport || '').trim(),
@@ -63,9 +64,11 @@ export async function PUT(request: NextRequest) {
       qrLightColor: qrLightColor || existingSettings.qrLightColor || '#FFFFFF',
       qrWidth: qrWidth ? parseInt(qrWidth) : (existingSettings.qrWidth || 300),
       qrMargin: qrMargin ? parseInt(qrMargin) : (existingSettings.qrMargin || 2),
+      // Uploaded QR Code (optional - only update if provided)
+      uploadedQRCode: uploadedQRCode !== undefined ? uploadedQRCode : existingSettings.uploadedQRCode,
     };
 
-    writeSettings(settings);
+    await writeSettings(settings);
 
     return NextResponse.json({ success: true, settings });
   } catch (error: any) {

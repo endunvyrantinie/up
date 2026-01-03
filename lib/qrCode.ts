@@ -33,7 +33,7 @@ export async function generateQRCode(
   
   try {
     const { readSettings } = await import('@/lib/db');
-    const settings = readSettings();
+    const settings = await readSettings();
     if (settings.qrWidth) defaultWidth = settings.qrWidth;
     if (settings.qrMargin) defaultMargin = settings.qrMargin;
     if (settings.qrDarkColor) defaultDarkColor = settings.qrDarkColor;
@@ -56,7 +56,7 @@ export async function generateQRCode(
   let format = 'COFFEEPAY-{amount}-{timestamp}';
   try {
     const { readSettings } = await import('@/lib/db');
-    const settings = readSettings();
+    const settings = await readSettings();
     if (settings.qrDataFormat) {
       format = settings.qrDataFormat;
     } else if (process.env.QR_DATA_FORMAT) {

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const transactions = readTransactions();
+    const transactions = await readTransactions();
     
     // Sort by date (newest first)
     transactions.sort((a, b) => 

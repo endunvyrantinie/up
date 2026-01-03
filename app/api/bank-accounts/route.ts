@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const accounts = readBankAccounts().filter(a => a.isActive);
-    return NextResponse.json({ accounts });
+    const accounts = await readBankAccounts();
+    const activeAccounts = accounts.filter(a => a.isActive);
+    return NextResponse.json({ accounts: activeAccounts });
   } catch (error) {
     console.error('Error fetching bank accounts:', error);
     return NextResponse.json({ error: 'Failed to fetch bank accounts' }, { status: 500 });
   }
 }
-

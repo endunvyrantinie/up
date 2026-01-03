@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { findUserById, readUsers, writeUsers, readTransactions, writeTransactions } from '@/lib/db';
+import { findUserById, updateUser, createTransaction } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,20 +23,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const users = readUsers();
-    const user = users.find(u => u.id === userId);
+    const user = await findUserById(userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    user.balance += amount;
-    if (amount > 0) {
-      user.totalEarned += amount;
-    }
-    writeUsers(users);
+    const updatedUser = await updateUser(userId, {
+      balance: user.balance + amount,
+      totalEarned: amount > 0 ? user.totalEarned + amount : user.totalEarned,
+    });
 
-    const transactions = readTransactions();
-    transactions.push({
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    }
+
+    await createTransaction({
       id: Date.now().toString(),
       userId: user.id,
       type: amount > 0 ? 'deposit' : 'withdrawal',
@@ -45,13 +46,12 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
       description: `Admin adjustment: ${reason || 'Manual balance adjustment'}`,
     });
-    writeTransactions(transactions);
 
     return NextResponse.json({ 
       success: true, 
       user: {
-        id: user.id,
-        balance: user.balance,
+        id: updatedUser.id,
+        balance: updatedUser.balance,
       }
     });
   } catch (error) {
@@ -59,4 +59,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to adjust balance' }, { status: 500 });
   }
 }
-

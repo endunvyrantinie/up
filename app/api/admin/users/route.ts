@@ -17,34 +17,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Read users with retry logic for serverless environments
-    let users = readUsers();
+    // Read users
+    const users = await readUsers();
     
-    // If no users found, try reading again (for file system sync issues)
-    if (users.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('No users found, retrying read...');
-      }
-      // Small delay to allow file system to sync
-      await new Promise(resolve => setTimeout(resolve, 100));
-      users = readUsers();
-    }
-    
-    // Only log in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`Admin users API: Found ${users.length} users`);
     }
     
-    const referrals = readReferrals();
+    const referrals = await readReferrals();
 
-    const usersWithStats = users.map(user => ({
+    const usersWithStats = await Promise.all(users.map(async (user) => ({
       ...user,
       password: undefined, // Don't send password
-      referralCount: getReferralCount(user.id),
+      referralCount: await getReferralCount(user.id),
       totalCommissions: referrals
-        .filter(r => r.referrerId === user.id)
-        .reduce((sum, r) => sum + r.commission, 0),
-    }));
+        .filter((r: any) => r.referrerId === user.id)
+        .reduce((sum: number, r: any) => sum + r.commission, 0),
+    })));
 
     return NextResponse.json({ 
       users: usersWithStats,

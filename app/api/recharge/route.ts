@@ -1,74 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import { findUserById, readSettings, createTransaction, updateUser } from '@/lib/db';
-import { generateQRCode } from '@/lib/qrCode';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { amount } = await request.json();
-
-    if (!amount || amount < 50) {
-      return NextResponse.json({ error: 'Minimum deposit is RM 50' }, { status: 400 });
-    }
-
-    const user = await findUserById(decoded.userId);
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // For MVP: create pending transaction (not immediately added to wallet)
-    const transactionId = Date.now().toString();
+    const authHeader = request.headers.get('Authorization');
     
-    // Check if uploaded QR code exists, otherwise generate one
-    const settings = await readSettings();
-    let qrCode: string;
-    
-    if (settings.uploadedQRCode) {
-      // Use uploaded QR code
-      qrCode = settings.uploadedQRCode;
-    } else {
-      // Generate QR code for payment with transaction info
-      qrCode = await generateQRCode(amount, {
-        userId: user.id,
-        transactionId: transactionId,
-        type: 'recharge',
-      });
-    }
-    
-    await createTransaction({
-      id: transactionId,
-      userId: user.id,
-      type: 'deposit',
-      amount,
-      status: 'pending', // Changed to pending - admin needs to approve
-      createdAt: new Date().toISOString(),
-      description: 'Recharge deposit',
-      qrCode: qrCode, // Store QR code in transaction
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'myr',
+          product_data: { name: 'Wallet Recharge' },
+          unit_amount: Math.round(amount * 100),
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/home`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/recharge`,
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'QR code generated. Please scan to complete payment.',
-      qrCode: qrCode,
-      amount: amount,
-      transactionId: transactionId
-    });
-  } catch (error) {
-    console.error('Recharge error:', error);
-    return NextResponse.json({ error: 'Recharge failed' }, { status: 500 });
+    return NextResponse.json({ success: true, url: session.url });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

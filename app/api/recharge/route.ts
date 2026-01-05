@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('Authorization');
     
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'fpx'],
       line_items: [{
         price_data: {
           currency: 'myr',

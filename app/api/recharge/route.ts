@@ -4,38 +4,36 @@ export async function POST(req: Request) {
   try {
     const { amount, email, name, phone } = await req.json();
 
-    const body = new URLSearchParams();
-    body.append('userSecretKey', process.env.TOYYIBPAY_SECRET_KEY || '');
-    body.append('categoryCode', process.env.TOYYIBPAY_CATEGORY_CODE || '');
-    body.append('billName', "D' Mannee Wallet Recharge");
-    body.append('billDescription', `Topup for ${email}`);
-    body.append('billPriceSetting', '1');
-    body.append('billAmount', (amount * 100).toString()); 
-    body.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/success`);
-    body.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/toyyibpay`);
-    body.append('billExternalReferenceNo', `REF-${Date.now()}`);
-    body.append('billTo', name || 'Customer');
-    body.append('billEmail', email || 'no-reply@dmannee.com');
-    body.append('billPhone', phone || '0123456789');
+    // TOYYIBPAY REQUIRES THIS SPECIFIC FORMAT (Form Data)
+    const details = new URLSearchParams();
+    details.append('userSecretKey', process.env.TOYYIBPAY_SECRET_KEY || '');
+    details.append('categoryCode', process.env.TOYYIBPAY_CATEGORY_CODE || '');
+    details.append('billName', "D' Mannee Wallet Topup");
+    details.append('billDescription', `Topup for ${email}`);
+    details.append('billPriceSetting', '1');
+    details.append('billAmount', (amount * 100).toString()); // RM to Cents
+    details.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/success`);
+    details.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/toyyibpay`);
+    details.append('billExternalReferenceNo', `RECH-${Date.now()}`);
+    details.append('billTo', name || 'Customer');
+    details.append('billEmail', email || 'no-reply@dmannee.com');
+    details.append('billPhone', phone || '0123456789');
 
     const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
       method: 'POST',
-      body: body,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // CRITICAL
+      body: details,
     });
 
-    const textResponse = await response.text(); // Use text first to catch non-JSON errors
-    
-    try {
-      const data = JSON.parse(textResponse);
-      if (data[0]?.BillCode) {
-        return NextResponse.json({ url: `https://toyyibpay.com/${data[0].BillCode}` });
-      }
-      return NextResponse.json({ error: data[0]?.err_msg || "Invalid API Response" }, { status: 400 });
-    } catch (e) {
-      // If ToyyibPay returns "[CATEGORY_NOT_FOUND]" instead of JSON, this catches it
-      return NextResponse.json({ error: `ToyyibPay Error: ${textResponse}` }, { status: 400 });
+    const data = await response.json();
+
+    if (Array.isArray(data) && data[0]?.BillCode) {
+      return NextResponse.json({ url: `https://toyyibpay.com/${data[0].BillCode}` });
+    } else {
+      console.error('ToyyibPay Reject:', data);
+      return NextResponse.json({ error: data[0]?.err_msg || "Configuration Error" }, { status: 400 });
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "System Error" }, { status: 500 });
   }
 }

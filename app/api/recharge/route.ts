@@ -16,7 +16,6 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // Create a pending transaction in our database
     await Transaction.create({
       id: orderId,
       userId: decoded.userId,
@@ -41,7 +40,9 @@ export async function POST(req: Request) {
     details.append('billTo', name || 'Customer');
     details.append('billEmail', email || 'no-reply@dmannee.com');
     details.append('billPhone', phone || '0123456789');
-    details.append('billPaymentChannel', '2');
+    
+    // CHANGED TO '0' for better compatibility with unverified accounts
+    details.append('billPaymentChannel', '0'); 
 
     const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
       method: 'POST',
@@ -53,6 +54,8 @@ export async function POST(req: Request) {
     if (Array.isArray(data) && data[0]?.BillCode) {
       return NextResponse.json({ url: `https://toyyibpay.com/${data[0].BillCode}` } );
     } else {
+      // This will now show the EXACT error from ToyyibPay in your browser console
+      console.error('ToyyibPay Error Details:', data);
       return NextResponse.json({ error: data[0]?.err_msg || "Configuration Error" }, { status: 400 });
     }
   } catch (error: any) {

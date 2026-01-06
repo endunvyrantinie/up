@@ -3,17 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomTabBar from '@/components/BottomTabBar';
-import { VIP_PLANS } from '@/lib/vipPlans';
 
 export default function ProductPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [activeVIPs, setActiveVIPs] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchUser();
+    const init = async () => {
+      await fetchUser();
+      await fetchProducts();
+      setLoading(false);
+    };
+    init();
   }, []);
 
   const fetchUser = async () => {
@@ -26,11 +31,23 @@ export default function ProductPage() {
         setUser(data.user);
         if (data.user.activeVIP) setActiveVIPs(data.user.activeVIP.map((v: any) => v.productId));
       } else { router.push('/login'); }
-    } catch (error) { router.push('/login'); } finally { setLoading(false); }
+    } catch (error) { router.push('/login'); }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (data.products) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products');
+    }
   };
 
   const handlePurchase = async (planId: string) => {
-    const plan = VIP_PLANS.find(p => p.id === planId);
+    const plan = products.find(p => p.id === planId);
     if (!plan) return;
 
     if (user.balance < plan.price) {
@@ -48,7 +65,12 @@ export default function ProductPage() {
       const res = await fetch('/api/vip/purchase', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: planId, amount: plan.price, dailyIncome: plan.dailyIncome, validityDays: plan.validityDays }),
+        body: JSON.stringify({ 
+          productId: planId, 
+          amount: plan.price, 
+          dailyIncome: plan.dailyIncome, 
+          validityDays: plan.validityDays 
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -64,10 +86,10 @@ export default function ProductPage() {
     <div className="min-h-screen-safe bg-gradient-to-br from-coffee-50 to-coffee-200 pb-28">
       <div className="bg-coffee-brown text-white p-6 shadow-2xl rounded-b-3xl mb-6">
         <p className="text-white/90 text-sm">💰 My Balance</p>
-        <p className="text-3xl font-bold">RM {user.balance?.toFixed(2) || '0.00'}</p>
+        <p className="text-3xl font-bold">RM {user?.balance?.toFixed(2) || '0.00'}</p>
       </div>
       <div className="container mx-auto px-4 space-y-6">
-        {VIP_PLANS.map((plan) => {
+        {products.map((plan) => {
           const isActivated = activeVIPs.includes(plan.id);
           return (
             <div key={plan.id} className={`bg-white rounded-3xl shadow-2xl p-6 border-2 ${isActivated ? 'border-green-500' : 'border-coffee-200'} relative`}>

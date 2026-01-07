@@ -1,73 +1,42 @@
 import { NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import connectDB from '@/lib/mongodb';
-import Transaction from '@/models/Transaction';
+import { readProducts } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
-    const token = req.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const decoded = verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-
-    const { amount, email, name, phone } = await req.json();
-    const orderId = `RECH-${Date.now()}`;
-
-    try {
-      await connectDB();
-      await Transaction.create({
-        id: orderId,
-        userId: decoded.userId,
-        type: 'recharge',
-        amount: Number(amount),
-        status: 'pending',
-        description: 'Wallet Topup',
-        createdAt: new Date().toISOString()
-      });
-    } catch (dbError) {
-      console.error('DB Log Skipped');
-    }
-
-    const details = new URLSearchParams();
-    details.append('userSecretKey', process.env.TOYYIBPAY_SECRET_KEY || '');
-    details.append('categoryCode', process.env.TOYYIBPAY_CATEGORY_CODE || '');
-    details.append('billName', "Wallet Topup");
-    details.append('billDescription', "Topup");
-    details.append('billPriceSetting', '1');
-    details.append('billPayorInfo', '1');
-    details.append('billAmount', (Number(amount) * 100).toFixed(0));
-    details.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/success`);
-    details.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/toyyibpay`);
-    details.append('billExternalReferenceNo', orderId);
-    details.append('billTo', name || 'Customer');
-    details.append('billEmail', email || 'user@dmannee.com');
-    details.append('billPhone', phone || '0123456789');
-    details.append('billPaymentChannel', '0'); 
-
-    const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: details,
-    } );
-
-    const data = await response.json();
+    // 1. Try to get products from database
+    let products = await readProducts();
     
-    if (Array.isArray(data) && data[0]?.BillCode) {
-      return NextResponse.json({ url: `https://toyyibpay.com/${data[0].BillCode}` } );
-    } else {
-      // THIS PART IS UPDATED TO SHOW THE REAL ERROR
-      const rawError = JSON.stringify(data);
-      console.error('ToyyibPay Raw Error:', rawError);
-      
-      if (rawError.includes("Invalid Secret Key")) return NextResponse.json({ error: "Invalid Secret Key in Dashboard" }, { status: 400 });
-      if (rawError.includes("Category Not Found")) return NextResponse.json({ error: "Invalid Category Code" }, { status: 400 });
-      
-      return NextResponse.json({ error: data[0]?.err_msg || "Check ToyyibPay Settings" }, { status: 400 });
+    // 2. If database is empty or error, use these GUARANTEED defaults
+    if (!products || products.length === 0) {
+      products = [
+        { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
+        { id: 'VIP2', name: 'VIP2', price: 100, dailyIncome: 18, totalIncome: 1620, validityDays: 90 },
+        { id: 'VIP3', name: 'VIP3', price: 200, dailyIncome: 38, totalIncome: 3420, validityDays: 90 },
+        { id: 'VIP4', name: 'VIP4', price: 400, dailyIncome: 80, totalIncome: 7200, validityDays: 90 },
+        { id: 'VIP5', name: 'VIP5', price: 800, dailyIncome: 168, totalIncome: 15120, validityDays: 90 },
+        { id: 'VIP6', name: 'VIP6', price: 1600, dailyIncome: 352, totalIncome: 31680, validityDays: 90 },
+        { id: 'VIP7', name: 'VIP7', price: 3000, dailyIncome: 680, totalIncome: 61200, validityDays: 90 },
+        { id: 'VIP8', name: 'VIP8', price: 6000, dailyIncome: 1400, totalIncome: 126000, validityDays: 90 },
+        { id: 'VIP9', name: 'VIP9', price: 12000, dailyIncome: 2880, totalIncome: 259200, validityDays: 90 },
+      ];
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: "Connection Error" }, { status: 500 });
+    
+    return NextResponse.json({ products });
+  } catch (error) {
+    // 3. Emergency fallback if everything fails
+    const fallbackProducts = [
+      { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
+      { id: 'VIP2', name: 'VIP2', price: 100, dailyIncome: 18, totalIncome: 1620, validityDays: 90 },
+      { id: 'VIP3', name: 'VIP3', price: 200, dailyIncome: 38, totalIncome: 3420, validityDays: 90 },
+      { id: 'VIP4', name: 'VIP4', price: 400, dailyIncome: 80, totalIncome: 7200, validityDays: 90 },
+      { id: 'VIP5', name: 'VIP5', price: 800, dailyIncome: 168, totalIncome: 15120, validityDays: 90 },
+      { id: 'VIP6', name: 'VIP6', price: 1600, dailyIncome: 352, totalIncome: 31680, validityDays: 90 },
+      { id: 'VIP7', name: 'VIP7', price: 3000, dailyIncome: 680, totalIncome: 61200, validityDays: 90 },
+      { id: 'VIP8', name: 'VIP8', price: 6000, dailyIncome: 1400, totalIncome: 126000, validityDays: 90 },
+      { id: 'VIP9', name: 'VIP9', price: 12000, dailyIncome: 2880, totalIncome: 259200, validityDays: 90 },
+    ];
+    return NextResponse.json({ products: fallbackProducts });
   }
 }

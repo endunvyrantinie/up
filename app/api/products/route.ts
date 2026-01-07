@@ -8,7 +8,7 @@ export async function GET() {
     // 1. Try to get products from database
     let products = await readProducts();
     
-    // 2. If database is empty or error, use these GUARANTEED defaults
+    // 2. If database is empty, use these defaults
     if (!products || products.length === 0) {
       products = [
         { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
@@ -25,7 +25,7 @@ export async function GET() {
     
     return NextResponse.json({ products });
   } catch (error) {
-    // 3. Even if the whole system crashes, return the products anyway
+    // 3. Emergency fallback
     const fallbackProducts = [
       { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
       { id: 'VIP2', name: 'VIP2', price: 100, dailyIncome: 18, totalIncome: 1620, validityDays: 90 },

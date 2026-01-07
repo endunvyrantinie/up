@@ -18,9 +18,17 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+    
+    // FIXED: Changed decoded.id to decoded.userId to match your token structure
     const user = await User.findOneAndUpdate(
-      { id: decoded.id || decoded.userId },
-      { $set: { bankName, accountName, accountNumber } },
+      { id: decoded.userId }, 
+      { 
+        $set: { 
+          bankName, 
+          accountName, 
+          accountNumber 
+        } 
+      },
       { new: true }
     );
 

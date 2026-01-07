@@ -13,14 +13,22 @@ export async function POST(request: NextRequest) {
 
     const { bankName, accountName, accountNumber } = await request.json();
 
+    if (!bankName || !accountName || !accountNumber) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    }
+
     await connectDB();
-    await User.findOneAndUpdate(
-      { id: decoded.userId },
-      { $set: { bankName, accountName, accountNumber } }
+    const user = await User.findOneAndUpdate(
+      { id: decoded.id || decoded.userId },
+      { $set: { bankName, accountName, accountNumber } },
+      { new: true }
     );
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Update bank error:', error);
     return NextResponse.json({ error: 'Failed to update bank details' }, { status: 500 });
   }
 }

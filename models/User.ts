@@ -5,7 +5,7 @@ export interface IUser extends Document {
   username: string;
   phone: string;
   email?: string;
-  password: string; // hashed
+  password: string;
   referralCode: string;
   referredBy?: string;
   balance: number;
@@ -20,6 +20,9 @@ export interface IUser extends Document {
   dailyRewardsTotal?: number;
   hasSeenInfoModal?: boolean;
   isAdmin?: boolean;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -42,13 +45,13 @@ const UserSchema = new Schema<IUser>({
   dailyRewardsTotal: { type: Number, default: 0 },
   hasSeenInfoModal: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
+  bankName: { type: String, default: '' },
+  accountName: { type: String, default: '' },
+  accountNumber: { type: String, default: '' },
 }, {
-  timestamps: false, // We use createdAt string instead
+  timestamps: false,
 });
 
-// Prevent model recompilation in development
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
 export default User;
-
-

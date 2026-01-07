@@ -38,12 +38,8 @@ export default function ProductPage() {
     try {
       const res = await fetch('/api/products');
       const data = await res.json();
-      if (data.products) {
-        setProducts(data.products);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products');
-    }
+      if (data.products) setProducts(data.products);
+    } catch (error) { console.error('Failed to fetch products'); }
   };
 
   const handlePurchase = async (planId: string) => {

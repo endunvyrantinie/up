@@ -16,7 +16,6 @@ export async function POST(req: Request) {
     const { amount, email, name, phone } = await req.json();
     const orderId = `RECH-${Date.now()}`;
 
-    // 1. Try to save to database, but DON'T stop if it fails
     try {
       await connectDB();
       await Transaction.create({
@@ -29,11 +28,9 @@ export async function POST(req: Request) {
         createdAt: new Date().toISOString()
       });
     } catch (dbError) {
-      console.error('Database save skipped:', dbError);
-      // We continue anyway so the user can still pay
+      console.error('DB Log Skipped');
     }
 
-    // 2. Prepare ToyyibPay details
     const details = new URLSearchParams();
     details.append('userSecretKey', process.env.TOYYIBPAY_SECRET_KEY || '');
     details.append('categoryCode', process.env.TOYYIBPAY_CATEGORY_CODE || '');
@@ -50,7 +47,6 @@ export async function POST(req: Request) {
     details.append('billPhone', phone || '0123456789');
     details.append('billPaymentChannel', '0'); 
 
-    // 3. Call ToyyibPay
     const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -62,11 +58,16 @@ export async function POST(req: Request) {
     if (Array.isArray(data) && data[0]?.BillCode) {
       return NextResponse.json({ url: `https://toyyibpay.com/${data[0].BillCode}` } );
     } else {
-      const errMsg = Array.isArray(data) ? data[0]?.err_msg : "Invalid API Response";
-      return NextResponse.json({ error: errMsg }, { status: 400 });
+      // THIS PART IS UPDATED TO SHOW THE REAL ERROR
+      const rawError = JSON.stringify(data);
+      console.error('ToyyibPay Raw Error:', rawError);
+      
+      if (rawError.includes("Invalid Secret Key")) return NextResponse.json({ error: "Invalid Secret Key in Dashboard" }, { status: 400 });
+      if (rawError.includes("Category Not Found")) return NextResponse.json({ error: "Invalid Category Code" }, { status: 400 });
+      
+      return NextResponse.json({ error: data[0]?.err_msg || "Check ToyyibPay Settings" }, { status: 400 });
     }
   } catch (error: any) {
-    // 4. Final fallback error message
-    return NextResponse.json({ error: "Payment Gateway Busy. Try again." }, { status: 500 });
+    return NextResponse.json({ error: "Connection Error" }, { status: 500 });
   }
 }

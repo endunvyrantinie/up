@@ -9,7 +9,15 @@ import PaymentChannel, { IPaymentChannel } from '@/models/PaymentChannel';
 import Settings, { ISettings } from '@/models/Settings';
 import Product, { IProduct } from '@/models/Product';
 
-// Export interfaces for backward compatibility
+// Interfaces for the application
+export interface ReferralTreeItem {
+  id: string;
+  username: string;
+  level: number;
+  commission: number;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   username: string;

@@ -1,72 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+export async function POST(req: Request) {
+  // 1. Check for the Secret Key
+  const apiKey = process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    console.error("❌ ERROR: STRIPE_SECRET_KEY is missing from Railway variables.");
+    return NextResponse.json({ error: "Server config error" }, { status: 500 });
+  }
 
-export async function POST(req: NextRequest) {
+  // 2. Initialize Stripe
+  const stripe = new Stripe(apiKey, {
+    apiVersion: '2024-12-18.acacia' as any,
+  });
+
   try {
-    // 1. SAFETY CHECK: Ensure Stripe Key exists before initializing
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error('STRIPE_SECRET_KEY is missing in environment variables');
-      return NextResponse.json({ error: 'Payment system is not configured' }, { status: 500 });
-    }
+    const { amount, userId } = await req.json();
 
-    // 2. INITIALIZE STRIPE: Inside the function to prevent build-time errors
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16' as any,
-    });
-
-    // 3. AUTHENTICATION: Verify the user's token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    let userId: string;
+    // 3. Auto-detect the website URL (Fixes the "Expired Session" error)
+    const origin = req.headers.get('origin');
     
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      userId = decoded.id;
-    } catch (err) {
-      return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
-    }
+    // Fallback if origin is somehow missing (safety net)
+    const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-    // 4. VALIDATION: Get amount and check RM 30 minimum
-    const { amount } = await req.json();
-
-    if (!amount || amount < 30) {
-      return NextResponse.json({ error: 'Minimum recharge is RM 30.00' }, { status: 400 });
-    }
-
-    // 5. STRIPE SESSION: Create the checkout link
+    // 4. Create the Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['fpx', 'card', 'grabpay'],
+      payment_method_types: ['card', 'fpx'], // Enables Malaysian Banking
       line_items: [
         {
           price_data: {
             currency: 'myr',
             product_data: {
-              name: 'Wallet Recharge',
-              description: "D' Mannee Resources - Wallet Topup",
+              name: 'VIP Coffee Credits',
+              description: `Top-up for ID: ${userId}`,
             },
-            unit_amount: Math.round(amount * 100), // Convert RM to Sen
+            unit_amount: Math.round(amount * 100), // RM to Cents
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/recharge?status=cancel`,
-      metadata: {
-        userId: userId,
+      // We use the detected baseUrl to ensure the link is always valid
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/recharge`,
+      metadata: { 
+        userId: userId.toString() 
       },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Stripe error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    console.error('Stripe Error:', error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

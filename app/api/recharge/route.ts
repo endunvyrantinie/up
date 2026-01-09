@@ -1,38 +1,59 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { jwtVerify } from 'jose';
 
+// Using a stable, verified API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-28' as any,
+  apiVersion: '2023-10-16' as any,
 });
 
-export async function POST(req: Request) {
-  try {
-    const { amount, userId } = await req.json();
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-    // 1. Create the Stripe Checkout Session
+export async function POST(req: NextRequest) {
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const userId = payload.id as string;
+
+    const { amount } = await req.json();
+
+    // Updated minimum amount to RM 30.00
+    if (!amount || amount < 30) {
+      return NextResponse.json({ error: 'Minimum recharge is RM 30.00' }, { status: 400 });
+    }
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'fpx'], // Enables Credit Cards + Malaysian Banks
+      payment_method_types: ['fpx', 'card', 'grabpay'],
       line_items: [
         {
           price_data: {
             currency: 'myr',
             product_data: {
-              name: 'VIP Coffee Credits',
-              description: `Recharge for User ID: ${userId}`,
+              name: 'Wallet Recharge',
+              description: "D' Mannee Resources - Wallet Topup",
             },
-            unit_amount: Math.round(amount * 100), // Convert RM to Cents (RM1.00 = 100)
+            unit_amount: Math.round(amount * 100), // Stripe uses cents/sen
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/recharge`,
-      metadata: { userId }, // Store userId so you know who paid later
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/recharge?status=cancel`,
+      metadata: {
+        userId: userId,
+        type: 'recharge',
+      },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Stripe checkout error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

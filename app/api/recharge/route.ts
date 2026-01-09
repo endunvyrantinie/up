@@ -1,42 +1,38 @@
 import { NextResponse } from 'next/server';
-import { readProducts } from '@/lib/db';
+import Stripe from 'stripe';
 
-export const dynamic = 'force-dynamic';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-10-28' as any,
+});
 
-export async function GET() {
+export async function POST(req: Request) {
   try {
-    // 1. Try to get products from database
-    let products = await readProducts();
-    
-    // 2. If database is empty or error, use these GUARANTEED defaults
-    if (!products || products.length === 0) {
-      products = [
-        { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
-        { id: 'VIP2', name: 'VIP2', price: 100, dailyIncome: 18, totalIncome: 1620, validityDays: 90 },
-        { id: 'VIP3', name: 'VIP3', price: 200, dailyIncome: 38, totalIncome: 3420, validityDays: 90 },
-        { id: 'VIP4', name: 'VIP4', price: 400, dailyIncome: 80, totalIncome: 7200, validityDays: 90 },
-        { id: 'VIP5', name: 'VIP5', price: 800, dailyIncome: 168, totalIncome: 15120, validityDays: 90 },
-        { id: 'VIP6', name: 'VIP6', price: 1600, dailyIncome: 352, totalIncome: 31680, validityDays: 90 },
-        { id: 'VIP7', name: 'VIP7', price: 3000, dailyIncome: 680, totalIncome: 61200, validityDays: 90 },
-        { id: 'VIP8', name: 'VIP8', price: 6000, dailyIncome: 1400, totalIncome: 126000, validityDays: 90 },
-        { id: 'VIP9', name: 'VIP9', price: 12000, dailyIncome: 2880, totalIncome: 259200, validityDays: 90 },
-      ];
-    }
-    
-    return NextResponse.json({ products });
-  } catch (error) {
-    // 3. Emergency fallback if everything fails
-    const fallbackProducts = [
-      { id: 'VIP1', name: 'VIP1', price: 30, dailyIncome: 8, totalIncome: 720, validityDays: 90 },
-      { id: 'VIP2', name: 'VIP2', price: 100, dailyIncome: 18, totalIncome: 1620, validityDays: 90 },
-      { id: 'VIP3', name: 'VIP3', price: 200, dailyIncome: 38, totalIncome: 3420, validityDays: 90 },
-      { id: 'VIP4', name: 'VIP4', price: 400, dailyIncome: 80, totalIncome: 7200, validityDays: 90 },
-      { id: 'VIP5', name: 'VIP5', price: 800, dailyIncome: 168, totalIncome: 15120, validityDays: 90 },
-      { id: 'VIP6', name: 'VIP6', price: 1600, dailyIncome: 352, totalIncome: 31680, validityDays: 90 },
-      { id: 'VIP7', name: 'VIP7', price: 3000, dailyIncome: 680, totalIncome: 61200, validityDays: 90 },
-      { id: 'VIP8', name: 'VIP8', price: 6000, dailyIncome: 1400, totalIncome: 126000, validityDays: 90 },
-      { id: 'VIP9', name: 'VIP9', price: 12000, dailyIncome: 2880, totalIncome: 259200, validityDays: 90 },
-    ];
-    return NextResponse.json({ products: fallbackProducts });
+    const { amount, userId } = await req.json();
+
+    // 1. Create the Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'fpx'], // Enables Credit Cards + Malaysian Banks
+      line_items: [
+        {
+          price_data: {
+            currency: 'myr',
+            product_data: {
+              name: 'VIP Coffee Credits',
+              description: `Recharge for User ID: ${userId}`,
+            },
+            unit_amount: Math.round(amount * 100), // Convert RM to Cents (RM1.00 = 100)
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/recharge`,
+      metadata: { userId }, // Store userId so you know who paid later
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

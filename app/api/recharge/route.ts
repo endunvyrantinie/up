@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import jwt from 'jsonwebtoken';
 
-// 1. Fix: Use a stable Stripe API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as any,
-});
-
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(req: NextRequest) {
   try {
-    // 2. Fix: Use jsonwebtoken instead of jose to stop the "Module not found" error
+    // 1. SAFETY CHECK: Ensure Stripe Key exists before initializing
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error('STRIPE_SECRET_KEY is missing in environment variables');
+      return NextResponse.json({ error: 'Payment system is not configured' }, { status: 500 });
+    }
+
+    // 2. INITIALIZE STRIPE: Moved inside the function to prevent build-time errors
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16' as any,
+    });
+
+    // 3. AUTHENTICATION: Verify the user's token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,17 +30,17 @@ export async function POST(req: NextRequest) {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       userId = decoded.id;
     } catch (err) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
     }
 
+    // 4. VALIDATION: Get amount and check RM 30 minimum
     const { amount } = await req.json();
 
-    // 3. Fix: Set minimum recharge to RM 30.00
     if (!amount || amount < 30) {
       return NextResponse.json({ error: 'Minimum recharge is RM 30.00' }, { status: 400 });
     }
 
-    // 4. Create Stripe Session
+    // 5. STRIPE SESSION: Create the checkout link
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['fpx', 'card', 'grabpay'],
       line_items: [
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest) {
               name: 'Wallet Recharge',
               description: "D' Mannee Resources - Wallet Topup",
             },
-            unit_amount: Math.round(amount * 100),
+            unit_amount: Math.round(amount * 100), // Convert RM to Sen
           },
           quantity: 1,
         },

@@ -14,40 +14,74 @@ function RechargeContent() {
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem('token');
-      if (!token) { router.push('/login'); return; }
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
       try {
-        const res = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await res.json();
         if (data.user) setUser(data.user);
-      } catch (err) { console.error('Failed to fetch user'); }
+      } catch (err) {
+        console.error('Failed to fetch user');
+      }
     };
     fetchUser();
-  }, []);
+
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      setMessage({ type: 'success', text: 'Payment successful! Your balance will be updated shortly.' });
+    } else if (status === 'cancel') {
+      setMessage({ type: 'error', text: 'Payment cancelled.' });
+    }
+  }, [searchParams, router]);
 
   const handleStripePay = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    if (!token) { setMessage({ type: 'error', text: 'Please login first' }); return; }
+    
+    if (!token) {
+      setMessage({ type: 'error', text: 'Please login first' });
+      return;
+    }
 
-    // Enforce RM 30 Minimum
+    // Minimum RM 30
     if (parseFloat(amount) < 30) {
       setMessage({ type: 'error', text: 'Minimum recharge is RM 30.00' });
       return;
     }
 
     setLoading(true);
+    setMessage({ type: '', text: '' });
+
     try {
-      const res = await fetch('/api/recharge/stripe', {
+      // Corrected endpoint to match the backend file
+      const res = await fetch('/api/recharge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: parseFloat(amount) }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amount: parseFloat(amount)
+        }),
       });
+
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setMessage({ type: 'error', text: data.error || 'Payment failed' });
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Payment failed to start' });
+      }
     } catch (err) {
-      setMessage({ type: 'error', text: 'System error' });
-    } finally { setLoading(false); }
+      setMessage({ type: 'error', text: 'System error. Check your connection.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,7 +91,7 @@ function RechargeContent() {
         
         {message.text && (
           <div className={`p-4 mb-6 rounded-xl text-sm font-bold ${message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-            {message.text}
+            {message.type === 'error' ? '⚠️' : '✅'} {message.text}
           </div>
         )}
 
@@ -71,6 +105,7 @@ function RechargeContent() {
             <label className="block text-sm font-bold text-stone-700 ml-1">Recharge Amount (RM)</label>
             <input
               type="number"
+              placeholder="30.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full p-4 bg-stone-50 border-2 border-stone-100 rounded-2xl outline-none focus:border-stone-900 transition"
@@ -80,16 +115,38 @@ function RechargeContent() {
             <p className="text-[10px] text-stone-400 ml-1 font-bold uppercase">Minimum Recharge: RM 30.00</p>
           </div>
 
-          <button type="submit" disabled={loading} className="w-full bg-stone-900 text-white p-4 rounded-2xl font-black hover:bg-stone-800 transition shadow-lg">
-            {loading ? 'Processing...' : `Pay RM ${parseFloat(amount || '0').toFixed(2)} via Stripe`}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-stone-900 text-white p-4 rounded-2xl font-black hover:bg-stone-800 transition shadow-lg shadow-stone-200 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              'Processing...'
+            ) : (
+              <>
+                <span>Pay RM {parseFloat(amount || '0').toFixed(2)} via Stripe</span>
+              </>
+            )}
           </button>
         </form>
-        <p className="text-center text-[10px] text-stone-400 mt-6 uppercase font-bold">D' Mannee Resources</p>
+        
+        <div className="mt-8 pt-6 border-t border-stone-100 text-center">
+          <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-2">Secure Payment via Stripe</p>
+          <div className="flex justify-center gap-4 opacity-30 grayscale">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/512px-Stripe_Logo%2C_revised_2016.svg.png" alt="Stripe" className="h-4" />
+          </div>
+        </div>
+        
+        <p className="text-center text-[10px] text-stone-400 mt-6 uppercase tracking-widest font-bold">D' Mannee Resources</p>
       </div>
     </div>
-  );
+   );
 }
 
 export default function RechargePage() {
-  return <Suspense fallback={<div>Loading...</div>}><RechargeContent /></Suspense>;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RechargeContent />
+    </Suspense>
+  );
 }

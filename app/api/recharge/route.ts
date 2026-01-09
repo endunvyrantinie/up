@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payment system is not configured' }, { status: 500 });
     }
 
-    // 2. INITIALIZE STRIPE: Moved inside the function to prevent build-time errors
+    // 2. INITIALIZE STRIPE: Inside the function to prevent build-time errors
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2023-10-16' as any,
     });

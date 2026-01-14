@@ -1,68 +1,58 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/auth';
+import connectDB from '@/lib/mongodb';
+import User from '@/models/User';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // 1. Validate Secret Key
-    const apiKey = process.env.STRIPE_SECRET_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Server Configuration: Missing Stripe Key" }, { status: 500 });
+    const secretKey = process.env.TOYYIBPAY_SECRET_KEY;
+    const categoryCode = process.env.TOYYIBPAY_CATEGORY_CODE;
+
+    if (!secretKey || !categoryCode) {
+      return NextResponse.json({ error: 'ToyyibPay configuration missing' }, { status: 500 });
     }
 
-    const stripe = new Stripe(apiKey, {
-      apiVersion: '2024-12-18.acacia' as any,
-    });
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
 
-    // 2. Parse Body with Error Handling
-    let body;
-    try {
-      body = await req.json();
-    } catch (err) {
-      return NextResponse.json({ error: "Invalid JSON body sent from frontend" }, { status: 400 });
+    if (!token) return NextResponse.json({ error: 'Please login again' }, { status: 401 });
+
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.userId) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+
+    await connectDB();
+    const user = await User.findOne({ id: decoded.userId });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    const { amount } = await req.json();
+    if (!amount || amount < 30) return NextResponse.json({ error: 'Minimum RM 30.00' }, { status: 400 });
+
+    const formData = new URLSearchParams();
+    formData.append('userSecretKey', secretKey);
+    formData.append('categoryCode', categoryCode);
+    formData.append('billName', 'Wallet Recharge');
+    formData.append('billDescription', `Recharge for ${user.username || user.email}`);
+    formData.append('billPriceSetting', '1');
+    formData.append('billPayorInfo', '1');
+    formData.append('billAmount', (amount * 100).toString());
+    formData.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`);
+    formData.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/recharge/callback`);
+    formData.append('billExternalReferenceNo', decoded.userId);
+    formData.append('billTo', user.username || 'Customer');
+    formData.append('billEmail', user.email || 'customer@email.com');
+    formData.append('billPhone', '0123456789');
+
+    const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
+      method: 'POST',
+      body: formData,
+    } );
+
+    const result = await response.json();
+    if (result && result[0] && result[0].BillCode) {
+      return NextResponse.json({ url: `https://toyyibpay.com/${result[0].BillCode}` } );
     }
-
-    const { amount, userId } = body;
-
-    // 3. Strict Check for Data
-    if (!amount || !userId) {
-      console.error("❌ Missing Data in Request:", body);
-      return NextResponse.json({ 
-        error: `Missing ${!amount ? 'Amount' : 'User ID'}`,
-        debug: body 
-      }, { status: 400 });
-    }
-
-    // 4. Auto-detect Domain for Redirects
-    const { origin } = new URL(req.url);
-
-    // 5. Create Stripe Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'fpx'], // Enables Malaysian Banking
-      line_items: [
-        {
-          price_data: {
-            currency: 'myr',
-            product_data: {
-              name: 'VIP Coffee Credits',
-              description: `Top-up for User: ${userId}`,
-            },
-            unit_amount: Math.round(Number(amount) * 100), // RM to Cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/recharge`,
-      metadata: { 
-        userId: String(userId) 
-      },
-    });
-
-    return NextResponse.json({ url: session.url });
-
+    return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 });
   } catch (error: any) {
-    console.error('🔴 Stripe Server Error:', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'System error' }, { status: 500 });
   }
 }

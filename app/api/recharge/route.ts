@@ -23,23 +23,20 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const user = await User.findOne({ id: decoded.userId });
     
-    // --- CRITICAL EMAIL FIX ---
-    // 1. Get email from DB, or use username, or use a hardcoded safe default
+    // --- FINAL EMAIL SANITIZATION FIX ---
     let rawEmail = user?.email || user?.username || 'customer';
     
-    // 2. Clean it: remove all spaces and special characters that aren't allowed in emails
-    let cleanEmail = rawEmail.toString().toLowerCase().trim().replace(/\s+/g, '');
+    // 1. Remove the '+' sign and all other special characters except @ and .
+    // This turns +6011... into 6011...
+    let cleanEmail = rawEmail.toString().toLowerCase().trim().replace(/[^\w@.]/g, '');
 
-    // 3. If it doesn't look like a real email (missing @ or .), make it one
+    // 2. Ensure it has a valid domain
     if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       cleanEmail = `${cleanEmail}@gmail.com`;
     }
 
-    // 4. Final Safety Check: If for some reason it's still weird, use this
-    const finalEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) 
-      ? cleanEmail 
-      : 'customer_payment@gmail.com';
-    // --- END CRITICAL FIX ---
+    const finalEmail = cleanEmail;
+    // --- END FIX ---
 
     const { amount } = await req.json();
     if (!amount || amount < 30) return NextResponse.json({ error: 'Minimum RM 30.00' }, { status: 400 });
@@ -55,11 +52,9 @@ export async function POST(req: NextRequest) {
     formData.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`);
     formData.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/recharge/callback`);
     formData.append('billExternalReferenceNo', decoded.userId);
-    formData.append('billTo', (user?.username || 'Customer').toString().trim());
-    formData.append('billEmail', finalEmail); // This is now guaranteed to be valid
+    formData.append('billTo', (user?.username || 'Customer').toString().trim().replace(/[^\w\s]/g, ''));
+    formData.append('billEmail', finalEmail); 
     formData.append('billPhone', '0123456789');
-
-    console.log('Sending to ToyyibPay with Email:', finalEmail);
 
     const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
       method: 'POST',

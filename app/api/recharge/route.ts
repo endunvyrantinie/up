@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const categoryCode = process.env.TOYYIBPAY_CATEGORY_CODE;
 
     if (!secretKey || !categoryCode) {
-      return NextResponse.json({ error: 'ToyyibPay configuration missing' }, { status: 500 });
+      return NextResponse.json({ error: 'Config Missing: Check Vercel Env Vars' }, { status: 500 });
     }
 
     const authHeader = req.headers.get('Authorization');
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     formData.append('billDescription', `Recharge for ${user.username || user.email}`);
     formData.append('billPriceSetting', '1');
     formData.append('billPayorInfo', '1');
-    formData.append('billAmount', (amount * 100).toString());
+    formData.append('billAmount', (amount * 100).toString()); // ToyyibPay uses cents
     formData.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`);
     formData.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/recharge/callback`);
     formData.append('billExternalReferenceNo', decoded.userId);
@@ -48,11 +48,20 @@ export async function POST(req: NextRequest) {
     } );
 
     const result = await response.json();
+    
+    // DEBUG: This will show in your Vercel Logs
+    console.log('ToyyibPay Response:', result);
+
     if (result && result[0] && result[0].BillCode) {
       return NextResponse.json({ url: `https://toyyibpay.com/${result[0].BillCode}` } );
     }
-    return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 });
+
+    // If it fails, return the actual error from ToyyibPay
+    const errorMessage = result?.msg || result[0]?.msg || 'Failed to create bill';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+
   } catch (error: any) {
-    return NextResponse.json({ error: 'System error' }, { status: 500 });
+    console.error('System Error:', error);
+    return NextResponse.json({ error: 'System error: ' + error.message }, { status: 500 });
   }
 }

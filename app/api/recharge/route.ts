@@ -27,19 +27,30 @@ export async function POST(req: NextRequest) {
     const { amount } = await req.json();
     if (!amount || amount < 30) return NextResponse.json({ error: 'Minimum RM 30.00' }, { status: 400 });
 
+    // --- EMAIL FIX START ---
+    // Ensure email is a string, trimmed of spaces, and valid
+    let userEmail = (user.email || 'customer@gmail.com').toString().trim();
+    
+    // Basic regex to check if email format is actually valid
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userEmail)) {
+      userEmail = 'customer@gmail.com'; // Fallback to a safe valid email
+    }
+    // --- EMAIL FIX END ---
+
     const formData = new URLSearchParams();
     formData.append('userSecretKey', secretKey);
     formData.append('categoryCode', categoryCode);
     formData.append('billName', 'Wallet Recharge');
-    formData.append('billDescription', `Recharge for ${user.username || user.email}`);
+    formData.append('billDescription', `Recharge for ${user.username || 'User'}`);
     formData.append('billPriceSetting', '1');
     formData.append('billPayorInfo', '1');
-    formData.append('billAmount', (amount * 100).toString()); // ToyyibPay uses cents
+    formData.append('billAmount', (amount * 100).toString()); 
     formData.append('billReturnUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/home?status=success`);
     formData.append('billCallbackUrl', `${process.env.NEXT_PUBLIC_BASE_URL}/api/recharge/callback`);
     formData.append('billExternalReferenceNo', decoded.userId);
-    formData.append('billTo', user.username || 'Customer');
-    formData.append('billEmail', user.email || 'customer@email.com');
+    formData.append('billTo', (user.username || 'Customer').toString().trim());
+    formData.append('billEmail', userEmail); // Using the cleaned email
     formData.append('billPhone', '0123456789');
 
     const response = await fetch('https://toyyibpay.com/index.php/api/createBill', {
@@ -49,15 +60,13 @@ export async function POST(req: NextRequest) {
 
     const result = await response.json();
     
-    // DEBUG: This will show in your Vercel Logs
     console.log('ToyyibPay Response:', result);
 
     if (result && result[0] && result[0].BillCode) {
       return NextResponse.json({ url: `https://toyyibpay.com/${result[0].BillCode}` } );
     }
 
-    // If it fails, return the actual error from ToyyibPay
-    const errorMessage = result?.msg || result[0]?.msg || 'Failed to create bill';
+    const errorMessage = result?.msg || (Array.isArray(result) && result[0]?.msg) || 'Failed to create bill';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
 
   } catch (error: any) {
